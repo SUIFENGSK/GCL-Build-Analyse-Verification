@@ -27,7 +27,7 @@ type arithmeticExpr =
     | UPlusExpr of (arithmeticExpr)
     | UMinusExpr of (arithmeticExpr)
     | PowExpr of (arithmeticExpr * arithmeticExpr)
-    | ParenExpr of (arithmeticExpr)
+    | ParenAExpr of (arithmeticExpr)
 
 // b  ::=  true  |  false  |  b & b  |  b | b  |  b && b  |  b || b  |  ! b
 //    |  a = a  |  a != a  |  a > a  |  a >= a  |  a < a  |  a <= a  |  (b)
@@ -45,7 +45,7 @@ type booleanExpr =
     | GteExpr of (arithmeticExpr * arithmeticExpr)
     | LtExpr of (arithmeticExpr * arithmeticExpr)
     | LteExpr of (arithmeticExpr * arithmeticExpr)
-    | ParenExpr of (booleanExpr)
+    | ParenBExpr of (booleanExpr)
 
 // C  ::=  x := a  |  A[a] := a  |  skip  |  C ; C  |  if GC fi  |  do GC od
 // GC ::=  b -> C  |  GC [] GC
