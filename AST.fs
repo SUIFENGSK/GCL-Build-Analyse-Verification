@@ -11,3 +11,5 @@ type expr =
     | PowExpr of (expr * expr)
     | UPlusExpr of (expr)
     | UMinusExpr of (expr)
+    | RootExpr of (expr)
+    | LogExpr of (expr)

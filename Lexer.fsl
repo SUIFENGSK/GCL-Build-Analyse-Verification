@@ -32,3 +32,5 @@ rule tokenize = parse
 | '('           { LPAR }
 | ')'           { RPAR }
 | eof           { EOF }
+| "root"        { ROOT }
+| "log"         { LOG }
