@@ -26,9 +26,18 @@ let parse parser src =
         Error(ParseError(pos, lastToken, e))
 
 let rec prettyPrint ast =
-   // TODO: start here
-   failwith "GCL parser not yet implemented"
-
+   match ast with
+    | Num n -> string n
+    | Str s -> s
+    | Assign (s, a) -> s + ":=" + prettyPrint a
+    | ArrAssign (s, a1, a2) -> s + "[" + prettyPrint a1 + "] := " + prettyPrint a2
+    | Skip -> "skip"
+    | Sequence (c1, c2) -> prettyPrint c1 + "; " + prettyPrint c2
+    | If gc -> "if " + prettyPrint gc + " fi"
+    | Do gc -> "do " + prettyPrint gc + " od"
+    | Condition (b, c) -> prettyPrint b + " -> " + prettyPrint c
+    | Choice (gc1, gc2) -> prettyPrint gc1 + " [] " + prettyPrint gc2
+    
 let analysis (src: string) : string =
     match parse Parser.start (src) with
         | Ok ast ->
