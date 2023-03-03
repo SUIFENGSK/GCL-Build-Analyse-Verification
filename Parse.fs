@@ -27,6 +27,16 @@ let parse parser src =
 
 let rec prettyPrint ast =
     match ast with
+    | Num n -> string n
+    | Str s -> s
+    | Assign (s, a) -> s + ":=" + prettyPrint a
+    | ArrAssign (s, a1, a2) -> s + "[" + prettyPrint a1 + "] := " + prettyPrint a2
+    | Skip -> "skip"
+    | Sequence (c1, c2) -> prettyPrint c1 + "; " + prettyPrint c2
+    | If gc -> "if " + prettyPrint gc + " fi"
+    | Do gc -> "do " + prettyPrint gc + " od"
+    | Condition (b, c) -> prettyPrint b + " -> " + prettyPrint c
+    | Choice (gc1, gc2) -> prettyPrint gc1 + " [] " + prettyPrint gc2
     | True -> "true"
     | False -> "false"
     | AndExpr (b1, b2) -> prettyPrint b1 + " & " + prettyPrint b2
