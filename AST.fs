@@ -2,7 +2,6 @@
 // to store represent arithmetic expressions
 module AST
 
-// Task 1
 // a  ::=  n  |  x  |  A[a]  |  a + a  |  a - a  |  a * a  |  a / a  |  - a  |  a ^ a  |  (a)
 type arithmeticExpr = 
     | Num of float

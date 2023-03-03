@@ -57,5 +57,3 @@ rule tokenize = parse
 | "<="          { LTE }
 | varMame       { VARNAME(LexBuffer<_>.LexemeString lexbuf) }
 | eof           { EOF }
-
-
