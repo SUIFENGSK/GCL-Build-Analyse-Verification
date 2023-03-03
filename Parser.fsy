@@ -30,7 +30,7 @@ open AST
 %type <AST.arithmeticExpr> start
 %type <AST.arithmeticExpr> arithmeticExpr0
 %type <AST.booleanExpr> startBooleanExpr
-%type <AST.booleanExpr> booleanExpr
+%type <AST.booleanExpr> booleanExpr0
 %type <AST.command> startCommand
 %type <AST.command> command
 %type <AST.guardedCommand> startGuardedCommand
@@ -58,7 +58,7 @@ command:
 startGuardedCommand: guardedCommand EOF { $1 }
 // Level 2: Guarded commands
 guardedCommand:
-  | booleanExpr CONDITION command { Condition($1, $3) }
+  | booleanExpr0 CONDITION command { Condition($1, $3) }
   | guardedCommand LBRACK RBRACK guardedCommand { Choice($1, $4) }
 
 start: arithmeticExpr0 EOF             { $1 }
@@ -73,40 +73,45 @@ start: arithmeticExpr0 EOF             { $1 }
 
 // Task 1
 arithmeticExpr0:
-  | arithmeticExpr0 TIMES arithmeticExpr0 { TimesExpr($1,$3) }
-  | arithmeticExpr0 DIV arithmeticExpr0 { DivExpr($1,$3) }
-  | arithmeticExpr0 PLUS arithmeticExpr0 { PlusExpr($1,$3) }
-  | arithmeticExpr0 MINUS arithmeticExpr0 { MinusExpr($1,$3) }
-  | arithmeticExpr0 POW arithmeticExpr0 { PowExpr($1,$3) }
-  | arithmeticExpr1 { $1 }
+    | arithmeticExpr0 PLUS arithmeticExpr1 { PlusExpr($1,$3) }
+    | arithmeticExpr0 MINUS arithmeticExpr1 { MinusExpr($1,$3) }
+    | arithmeticExpr1 { $1 }
 arithmeticExpr1:
-  | PLUS arithmeticExpr1 { UPlusExpr($2) }
-  | MINUS arithmeticExpr1 { UMinusExpr($2) }
-  | NUM { Num($1) }
-  | LPAR arithmeticExpr0 RPAR { $2 }
-  | VARNAME { Str($1) }
-  | VARNAME LBRACK arithmeticExpr0 RBRACK { ArrAccess($1, $3) }
+    | arithmeticExpr1 TIMES arithmeticExpr2 { TimesExpr($1,$3) }
+    | arithmeticExpr1 DIV arithmeticExpr2 { DivExpr($1,$3) }
+    | arithmeticExpr2 { $1 }
+arithmeticExpr2:
+    | arithmeticExpr3 POW arithmeticExpr2 { PowExpr($1,$3) }
+    | arithmeticExpr3 { $1 }
+arithmeticExpr3:
+    | PLUS arithmeticExpr3 { UPlusExpr($2) }
+    | MINUS arithmeticExpr3 { UMinusExpr($2) }
+    | NUM { Num($1) }
+    | LPAR arithmeticExpr0 RPAR { $2 }
+    | VARNAME { Str($1) }
+    | VARNAME LBRACK arithmeticExpr0 RBRACK { ArrAccess($1, $3) }
 
-startBooleanExpr: booleanExpr EOF { $1 }
+startBooleanExpr: booleanExpr0 EOF { $1 }
 
-booleanExpr:
-  | TRUE { True }
-  | FALSE { False }
-  | booleanExpr AND booleanExpr { AndExpr($1, $3) }
-  | booleanExpr OR booleanExpr { OrExpr($1, $3) }
-  | booleanExpr ANDAND booleanExpr { AndAndExpr($1, $3) }
-  | booleanExpr OROR booleanExpr { OrOrExpr($1, $3) }
-  | NOT booleanExpr { NotExpr($2) }
-  | arithmeticExpr0 EQ arithmeticExpr0 { EqExpr($1, $3) }
-  | arithmeticExpr0 NEQ arithmeticExpr0 { NeqExpr($1, $3) }
-  | arithmeticExpr0 GT arithmeticExpr0 { GtExpr($1, $3) }
-  | arithmeticExpr0 GTE arithmeticExpr0 { GteExpr($1, $3) }
-  | arithmeticExpr0 LT arithmeticExpr0 { LtExpr($1, $3) }
-  | arithmeticExpr0 LTE arithmeticExpr0 { LteExpr($1, $3) }
-  | LPAR booleanExpr RPAR { $2 }
-
-
-
+booleanExpr0:
+    | booleanExpr0 OR booleanExpr1 { OrExpr($1,$3) }
+    | booleanExpr0 OROR booleanExpr1 { OrOrExpr($1,$3) }
+    | booleanExpr1 { $1 }
+booleanExpr1:
+    | booleanExpr1 AND booleanExpr2 { AndExpr($1,$3) }
+    | booleanExpr1 ANDAND booleanExpr2 { AndAndExpr($1,$3) }
+    | booleanExpr2 { $1 }
+booleanExpr2:
+    | NOT booleanExpr2 { NotExpr($2) }
+    | TRUE { True }
+    | FALSE { False }
+    | arithmeticExpr0 EQ arithmeticExpr0 { EqExpr($1,$3) }
+    | arithmeticExpr0 NEQ arithmeticExpr0 { NeqExpr($1,$3) }
+    | arithmeticExpr0 GT arithmeticExpr0 { GtExpr($1,$3) }
+    | arithmeticExpr0 GTE arithmeticExpr0 { GteExpr($1,$3) }
+    | arithmeticExpr0 LT arithmeticExpr0 { LtExpr($1,$3) }
+    | arithmeticExpr0 LTE arithmeticExpr0 { LteExpr($1,$3) }
+    | LPAR booleanExpr0 RPAR { $2 }
 
 
 // Again, the code annotation specifies the result of parsing
