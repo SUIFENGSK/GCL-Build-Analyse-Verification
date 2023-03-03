@@ -13,7 +13,7 @@ let digit       = ['0'-'9']
 let num         = digit+ ( '.' digit+)?  ('E' ('+'|'-')? digit+ )?
 let whitespace  = [' ' '\t']
 let newline     = "\n\r" | '\n' | '\r'
-let ident        = ['a'-'z' 'A'-'Z'](['a'-'z' 'A'-'Z']| '_' | digit)*
+let varMame        = ['a'-'z' 'A'-'Z'](['a'-'z' 'A'-'Z']| '_' | digit)*
 
 // We define now the rules for recognising and building tokens
 // for each of the tokens of our language we need a rule
@@ -25,7 +25,6 @@ rule tokenize = parse
 | newline       { lexbuf.EndPos <- lexbuf.EndPos.NextLine; tokenize lexbuf; }
 // deal with tokens that need to be built
 | num           { NUM(Double.Parse(LexBuffer<_>.LexemeString lexbuf)) }
-| ident         { IDENT(String.Parse(LexBuffer<_>.LexemeString lexbuf)) }
 | '*'           { TIMES }
 | '/'           { DIV }
 | '+'           { PLUS }
@@ -43,6 +42,7 @@ rule tokenize = parse
 // | "do"          { DOSTART }
 // | "od"          { DOEND }
 // | "->"          { CONDITION }
+| varMame          { VARNAME(LexBuffer<_>.LexemeString lexbuf) }
 | eof           { EOF }
 // | "true"        { TRUE }
 // | "false"       { FALSE }

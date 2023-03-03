@@ -48,8 +48,8 @@ let rec prettyPrint ast =
     // | GteExpr (a1, a2) -> prettyPrint a1 + " >= " + prettyPrint a2
     // | LtExpr (a1, a2) -> prettyPrint a1 + " < " + prettyPrint a2
     // | LteExpr (a1, a2) -> prettyPrint a1 + " <= " + prettyPrint a2
-and prettyPrinta ast = 
-    match ast with
+and prettyPrinta a = 
+    match a with
     | Num n -> string n
     | Str s -> string s
 let analysis (src: string) : string =

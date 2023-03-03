@@ -5,7 +5,7 @@ open AST
 
 // Declare the tokens (terminal symbols)
 %token <float> NUM
-%token <string> IDENT
+%token <string> VARNAME
 %token TIMES DIV PLUS MINUS POW LPAR RPAR EOF STRING SKIP SEMICOLON 
 %token ASSIGN // LBRACK RBRACK SKIP SEMICOLON IFSTART IFEND DOSTART DOEND CONDITION
 // %token TRUE FALSE AND OR ANDAND OROR NOT EQ NEQ GT GTE LT LTE
@@ -39,10 +39,25 @@ open AST
 // Grammar productions
 %%
 
+startCommand: command EOF { $1 }
+// Level 1: Commands
+command:
+  | VARNAME ASSIGN arithmeticExpr0 { Assign($1, $3) }
+  // | arithmeticExpr0 LBRACK arithmeticExpr0 RBRACK ASSIGN arithmeticExpr0 { ArrAssign($1, $3, $6) }
+  | SKIP { Skip }
+  | command SEMICOLON command { Seq($1, $3) }
+  // | IFSTART guardedCommand IFEND { If($2) }
+  // | DOSTART guardedCommand DOEND { Do($2) }
+
+// startGuardedCommand: guardedCommand EOF { $1 }
+// // Level 2: Guarded commands
+// guardedCommand:
+//   | booleanExpr CONDITION command { Condition($1, $3) }
+//   | guardedCommand LBRACK RBRACK guardedCommand { Choice($1, $4) }
 // The first production in "formal" notation is
 // start -> expression
 // here written:
-start: command EOF             { $1 }
+start: arithmeticExpr0 EOF             { $1 }
 
 // Note that we need to insert an End-Of-File (EOF)
 // The code annotation { $1 } specifies that parsing with this production
@@ -87,21 +102,7 @@ arithmeticExpr1:
 //   | LPAR booleanExpr RPAR { $2 }
 
 
-startCommand: command EOF { $1 }
-// Level 1: Commands
-command:
-  | IDENT ASSIGN arithmeticExpr0 { Assign($1, $3) }
-  // | arithmeticExpr0 LBRACK arithmeticExpr0 RBRACK ASSIGN arithmeticExpr0 { ArrAssign($1, $3, $6) }
-  | SKIP { Skip }
-  | command SEMICOLON command { Seq($1, $3) }
-  // | IFSTART guardedCommand IFEND { If($2) }
-  // | DOSTART guardedCommand DOEND { Do($2) }
 
-// startGuardedCommand: guardedCommand EOF { $1 }
-// // Level 2: Guarded commands
-// guardedCommand:
-//   | booleanExpr CONDITION command { Condition($1, $3) }
-//   | guardedCommand LBRACK RBRACK guardedCommand { Choice($1, $4) }
 
 
 // Again, the code annotation specifies the result of parsing
