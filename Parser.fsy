@@ -7,7 +7,7 @@ open AST
 %token <float> NUM
 %token <string> VARNAME
 %token TIMES DIV PLUS MINUS POW LPAR RPAR EOF STRING SKIP SEMICOLON 
-%token ASSIGN // LBRACK RBRACK SKIP SEMICOLON IFSTART IFEND DOSTART DOEND CONDITION
+%token ASSIGN LBRACK RBRACK // IFSTART IFEND DOSTART DOEND CONDITION
 // %token TRUE FALSE AND OR ANDAND OROR NOT EQ NEQ GT GTE LT LTE
 // NOTE: the actual formats of these tokens are defined in the lexer file
 //       as regular expressions
@@ -43,7 +43,7 @@ startCommand: command EOF { $1 }
 // Level 1: Commands
 command:
   | VARNAME ASSIGN arithmeticExpr0 { Assign($1, $3) }
-  // | arithmeticExpr0 LBRACK arithmeticExpr0 RBRACK ASSIGN arithmeticExpr0 { ArrAssign($1, $3, $6) }
+  | VARNAME LBRACK arithmeticExpr0 RBRACK ASSIGN arithmeticExpr0 { ArrAssign($1, $3, $6) }
   | SKIP { Skip }
   | command SEMICOLON command { Seq($1, $3) }
   // | IFSTART guardedCommand IFEND { If($2) }

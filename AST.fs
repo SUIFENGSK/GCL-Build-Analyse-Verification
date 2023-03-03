@@ -39,7 +39,7 @@ type arithmeticExpr =
 // GC ::=  b -> C  |  GC [] GC
 type command = 
     | Assign of (string * arithmeticExpr)
-    // | ArrAssign of (string * arithmeticExpr * arithmeticExpr)
+    | ArrAssign of (string * arithmeticExpr * arithmeticExpr)
     | Skip
     | Seq of (command * command)
 //     | If of guardedCommand

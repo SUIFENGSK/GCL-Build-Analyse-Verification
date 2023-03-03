@@ -27,8 +27,8 @@ let parse parser src =
 
 let rec prettyPrint ast =
     match ast with
-    | Assign(s, a) -> s + " := " + prettyPrinta a
-    // | ArrAssign (s, a1, a2) -> s + "[" + prettyPrint a1 + "] := " + prettyPrint a2
+    | Assign(s, a) -> s + " := " + prettyPrintAExpr a
+    | ArrAssign (s, a1, a2) -> s + "[" + prettyPrintAExpr a1 + "] := " + prettyPrintAExpr a2
     | Skip -> "skip"
     | Seq (c1, c2) -> prettyPrint c1 + "; \n" + prettyPrint c2
     // | If gc -> "if " + prettyPrint gc + " fi"
@@ -48,7 +48,7 @@ let rec prettyPrint ast =
     // | GteExpr (a1, a2) -> prettyPrint a1 + " >= " + prettyPrint a2
     // | LtExpr (a1, a2) -> prettyPrint a1 + " < " + prettyPrint a2
     // | LteExpr (a1, a2) -> prettyPrint a1 + " <= " + prettyPrint a2
-and prettyPrinta a = 
+and prettyPrintAExpr a = 
     match a with
     | Num n -> string n
     | Str s -> string s
