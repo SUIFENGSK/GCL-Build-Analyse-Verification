@@ -2,18 +2,6 @@
 // to store represent arithmetic expressions
 module AST
 
-// type expr =
-//     | Num of float
-//     | TimesExpr of (expr * expr)
-//     | DivExpr of (expr * expr)
-//     | PlusExpr of (expr * expr)
-//     | MinusExpr of (expr * expr)
-//     | PowExpr of (expr * expr)
-//     | UPlusExpr of (expr)
-//     | UMinusExpr of (expr)
-//     | RootExpr of (expr)
-//     | LogExpr of (expr)
-
 // Task 1
 // a  ::=  n  |  x  |  A[a]  |  a + a  |  a - a  |  a * a  |  a / a  |  - a  |  a ^ a  |  (a)
 type arithmeticExpr = 

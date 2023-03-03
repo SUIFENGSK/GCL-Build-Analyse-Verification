@@ -32,3 +32,17 @@ rule tokenize = parse
 | '('           { LPAR }
 | ')'           { RPAR }
 | eof           { EOF }
+| "true"        { TRUE }
+| "false"       { FALSE }
+| '&'           { AND }
+| '|'           { OR }
+| "&&"          { ANDAND }
+| "||"          { OROR }
+| "!"           { NOT }
+| "=="          { EQ }
+| "!="          { NEQ }
+| ">"           { GT }
+| ">="          { GTE }
+| "<"           { LT }
+| "<="          { LTE }
+

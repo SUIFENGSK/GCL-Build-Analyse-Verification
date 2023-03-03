@@ -6,6 +6,7 @@ open AST
 // Declare the tokens (terminal symbols)
 %token <float> NUM
 %token TIMES DIV PLUS MINUS POW LPAR RPAR EOF STRING
+%token TRUE FALSE AND OR ANDAND OROR NOT EQ NEQ GT GTE LT LTE
 // NOTE: the actual formats of these tokens are defined in the lexer file
 //       as regular expressions
 
@@ -22,6 +23,8 @@ open AST
 // We specify the return type of each of then non-terminal symbols
 %type <AST.arithmeticExpr> start
 %type <AST.arithmeticExpr> arithmeticExpr0
+%type <AST.booleanExpr> startbooleanExpr
+%type <AST.booleanExpr> booleanExpr
 //%type <AST.expr> expression1
 
 
@@ -57,20 +60,23 @@ arithmeticExpr1:
   | STRING { Str($1) }
   | STRING LPAR arithmeticExpr0 RPAR { ArrAccess($1, $3) }
 
-// Level 0 less priority for exponentiation
-expression0:
-  | expression0 TIMES expression0 { TimesExpr($1,$3) }
-  | expression0 DIV expression0 { DivExpr($1,$3) }
-  | expression0 PLUS expression0 { PlusExpr($1,$3) }
-  | expression0 MINUS expression0 { MinusExpr($1,$3) }
-  | expression0 POW expression0 { PowExpr($1,$3) }
-  | expression1 { $1 }
-// Level 1: more priority for unary minus
-expression1:
-  | PLUS expression1 { UPlusExpr($2) }
-  | MINUS expression1 { UMinusExpr($2) }
-  | NUM { Num($1) }
-  | LPAR expression0 RPAR { $2 }
+startbooleanExpr: booleanExpr EOF { $1 }
+
+booleanExpr:
+  | TRUE { True }
+  | FALSE { False }
+  | booleanExpr AND booleanExpr { AndExpr($1, $3) }
+  | booleanExpr OR booleanExpr { OrExpr($1, $3) }
+  | booleanExpr ANDAND booleanExpr { AndAndExpr($1, $3) }
+  | booleanExpr OROR booleanExpr { OrOrExpr($1, $3) }
+  | NOT booleanExpr { NotExpr($2) }
+  | arithmeticExpr0 EQ arithmeticExpr0 { EqExpr($1, $3) }
+  | arithmeticExpr0 NEQ arithmeticExpr0 { NeqExpr($1, $3) }
+  | arithmeticExpr0 GT arithmeticExpr0 { GtExpr($1, $3) }
+  | arithmeticExpr0 GTE arithmeticExpr0 { GteExpr($1, $3) }
+  | arithmeticExpr0 LT arithmeticExpr0 { LtExpr($1, $3) }
+  | arithmeticExpr0 LTE arithmeticExpr0 { LteExpr($1, $3) }
+  | LPAR booleanExpr RPAR { $2 }
 
 // Again, the code annotation specifies the result of parsing
 // For example { TimesExpr($1,$3) } specifies that parsing with the production
