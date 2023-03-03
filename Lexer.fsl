@@ -13,6 +13,7 @@ let digit       = ['0'-'9']
 let num         = digit+ ( '.' digit+)?  ('E' ('+'|'-')? digit+ )?
 let whitespace  = [' ' '\t']
 let newline     = "\n\r" | '\n' | '\r'
+let ident        = ['a'-'z' 'A'-'Z'](['a'-'z' 'A'-'Z']| '_' | digit)*
 
 // We define now the rules for recognising and building tokens
 // for each of the tokens of our language we need a rule
@@ -24,6 +25,7 @@ rule tokenize = parse
 | newline       { lexbuf.EndPos <- lexbuf.EndPos.NextLine; tokenize lexbuf; }
 // deal with tokens that need to be built
 | num           { NUM(Double.Parse(LexBuffer<_>.LexemeString lexbuf)) }
+| ident         { IDENT(String.Parse(LexBuffer<_>.LexemeString lexbuf)) }
 | '*'           { TIMES }
 | '/'           { DIV }
 | '+'           { PLUS }
@@ -32,27 +34,27 @@ rule tokenize = parse
 | '('           { LPAR }
 | ')'           { RPAR }
 | ":="          { ASSIGN }
-| '['           { LBRACK }
-| ']'           { RBRACK }
+// | '['           { LBRACK }
+// | ']'           { RBRACK }
 | "skip"        { SKIP }
 | ';'           { SEMICOLON }
-| "if"          { IFSTART }
-| "fi"          { IFEND }
-| "do"          { DOSTART }
-| "od"          { DOEND }
-| "->"          { CONDITION }
+// | "if"          { IFSTART }
+// | "fi"          { IFEND }
+// | "do"          { DOSTART }
+// | "od"          { DOEND }
+// | "->"          { CONDITION }
 | eof           { EOF }
-| "true"        { TRUE }
-| "false"       { FALSE }
-| '&'           { AND }
-| '|'           { OR }
-| "&&"          { ANDAND }
-| "||"          { OROR }
-| "!"           { NOT }
-| "=="          { EQ }
-| "!="          { NEQ }
-| ">"           { GT }
-| ">="          { GTE }
-| "<"           { LT }
-| "<="          { LTE }
+// | "true"        { TRUE }
+// | "false"       { FALSE }
+// | '&'           { AND }
+// | '|'           { OR }
+// | "&&"          { ANDAND }
+// | "||"          { OROR }
+// | "!"           { NOT }
+// | "=="          { EQ }
+// | "!="          { NEQ }
+// | ">"           { GT }
+// | ">="          { GTE }
+// | "<"           { LT }
+// | "<="          { LTE }
 

@@ -19,31 +19,31 @@ type arithmeticExpr =
 
 // b  ::=  true  |  false  |  b & b  |  b | b  |  b && b  |  b || b  |  ! b
 //    |  a = a  |  a != a  |  a > a  |  a >= a  |  a < a  |  a <= a  |  (b)
-type booleanExpr = 
-    | True
-    | False
-    | AndExpr of (booleanExpr * booleanExpr)
-    | OrExpr of (booleanExpr * booleanExpr)
-    | AndAndExpr of (booleanExpr * booleanExpr)
-    | OrOrExpr of (booleanExpr * booleanExpr)
-    | NotExpr of (booleanExpr)
-    | EqExpr of (arithmeticExpr * arithmeticExpr)
-    | NeqExpr of (arithmeticExpr * arithmeticExpr)
-    | GtExpr of (arithmeticExpr * arithmeticExpr)
-    | GteExpr of (arithmeticExpr * arithmeticExpr)
-    | LtExpr of (arithmeticExpr * arithmeticExpr)
-    | LteExpr of (arithmeticExpr * arithmeticExpr)
-    | ParenBExpr of (booleanExpr)
+// type booleanExpr = 
+//     | True
+//     | False
+//     | AndExpr of (booleanExpr * booleanExpr)
+//     | OrExpr of (booleanExpr * booleanExpr)
+//     | AndAndExpr of (booleanExpr * booleanExpr)
+//     | OrOrExpr of (booleanExpr * booleanExpr)
+//     | NotExpr of (booleanExpr)
+//     | EqExpr of (arithmeticExpr * arithmeticExpr)
+//     | NeqExpr of (arithmeticExpr * arithmeticExpr)
+//     | GtExpr of (arithmeticExpr * arithmeticExpr)
+//     | GteExpr of (arithmeticExpr * arithmeticExpr)
+//     | LtExpr of (arithmeticExpr * arithmeticExpr)
+//     | LteExpr of (arithmeticExpr * arithmeticExpr)
+//     | ParenBExpr of (booleanExpr)
 
 // C  ::=  x := a  |  A[a] := a  |  skip  |  C ; C  |  if GC fi  |  do GC od
 // GC ::=  b -> C  |  GC [] GC
 type command = 
     | Assign of (string * arithmeticExpr)
-    | ArrAssign of (string * arithmeticExpr * arithmeticExpr)
+    // | ArrAssign of (string * arithmeticExpr * arithmeticExpr)
     | Skip
-    | Sequence of (command * command)
-    | If of guardedCommand
-    | Do of guardedCommand
-and guardedCommand =
-    | Condition of (booleanExpr * command)
-    | Choice of (guardedCommand * guardedCommand)
+    | Seq of (command * command)
+//     | If of guardedCommand
+//     | Do of guardedCommand
+// and guardedCommand =
+//     | Condition of (booleanExpr * command)
+//     | Choice of (guardedCommand * guardedCommand)
