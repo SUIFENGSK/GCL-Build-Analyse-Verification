@@ -5,7 +5,7 @@ open AST
 
 // Declare the tokens (terminal symbols)
 %token <float> NUM
-%token TIMES DIV PLUS MINUS POW LPAR RPAR EOF ROOT LOG
+%token TIMES DIV PLUS MINUS POW LPAR RPAR EOF STRING
 // NOTE: the actual formats of these tokens are defined in the lexer file
 //       as regular expressions
 
@@ -20,9 +20,9 @@ open AST
 %start start
 
 // We specify the return type of each of then non-terminal symbols
-%type <AST.expr> start
-%type <AST.expr> expression0
-%type <AST.expr> expression1
+%type <AST.arithmeticExpr> start
+%type <AST.arithmeticExpr> arithmeticExpr0
+//%type <AST.expr> expression1
 
 
 // Grammar productions
@@ -31,7 +31,7 @@ open AST
 // The first production in "formal" notation is
 // start -> expression
 // here written:
-start: expression0 EOF             { $1 }
+start: arithmeticExpr0 EOF             { $1 }
 
 // Note that we need to insert an End-Of-File (EOF)
 // The code annotation { $1 } specifies that parsing with this production
@@ -64,8 +64,6 @@ expression0:
   | expression0 PLUS expression0 { PlusExpr($1,$3) }
   | expression0 MINUS expression0 { MinusExpr($1,$3) }
   | expression0 POW expression0 { PowExpr($1,$3) }
-  | ROOT expression0 { RootExpr($2) }
-  | LOG expression0 { LogExpr($2) }
   | expression1 { $1 }
 // Level 1: more priority for unary minus
 expression1:

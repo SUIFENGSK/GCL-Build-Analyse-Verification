@@ -24,7 +24,7 @@ let parse parser src =
         eprintf "\n"
         Error(ParseError(pos, lastToken, e))
 
-let rec evaluate: expr -> float =
+let rec evaluate: arithmeticExpr -> float =
     function
     | Num x -> x
     | TimesExpr (a, b) -> evaluate a * evaluate b
@@ -34,8 +34,6 @@ let rec evaluate: expr -> float =
     | PowExpr (a, b) -> evaluate a ** evaluate b
     | UPlusExpr a -> evaluate a
     | UMinusExpr a -> -evaluate a
-    | RootExpr a -> sqrt(evaluate a)
-    | LogExpr a -> log10(evaluate a)
 
 // Please do not change the main function, with exception to the "calc" case.
 // The other cases are needed for the validation and evaluation tools!
