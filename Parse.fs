@@ -25,36 +25,29 @@ let parse parser src =
         eprintf "\n"
         Error(ParseError(pos, lastToken, e))
 
-let rec prettyPrint ast =
+
+
+let rec prettyPrint (ast:AST) =
+    let rec prettyPrintCmd (cmd:command) =
+        match cmd with
+        | Assign(s, a) -> s + " := " + prettyPrint (A a)
+        | ArrAssign (s, a1, a2) -> s + "[" + prettyPrint (A a1) + "] := " + prettyPrint (A a2)
+        | Skip -> "skip"
+        | Seq (c1, c2) -> prettyPrint (C c1) + "; \n" + prettyPrint (C c2)
+        
+    let rec prettyPrintAExpr (a:arithmeticExpr) = 
+        match a with
+        | Num n -> string n
+        | Str s -> string s
+
     match ast with
-    | Assign(s, a) -> s + " := " + prettyPrintAExpr a
-    | ArrAssign (s, a1, a2) -> s + "[" + prettyPrintAExpr a1 + "] := " + prettyPrintAExpr a2
-    | Skip -> "skip"
-    | Seq (c1, c2) -> prettyPrint c1 + "; \n" + prettyPrint c2
-    // | If gc -> "if " + prettyPrint gc + " fi"
-    // | Do gc -> "do " + prettyPrint gc + " od"
-    // | Condition (b, c) -> prettyPrint b + " -> " + prettyPrint c
-    // | Choice (gc1, gc2) -> prettyPrint gc1 + " [] " + prettyPrint gc2
-    // | True -> "true"
-    // | False -> "false"
-    // | AndExpr (b1, b2) -> prettyPrint b1 + " & " + prettyPrint b2
-    // | OrExpr (b1, b2) -> prettyPrint b1 + " | " + prettyPrint b2
-    // | AndAndExpr (b1, b2) -> prettyPrint b1 + " && " + prettyPrint b2
-    // | OrOrExpr (b1, b2) -> prettyPrint b1 + " || " + prettyPrint b2
-    // | NotExpr b -> "!" + prettyPrint b
-    // | EqExpr (a1, a2) -> prettyPrint a1 + " = " + prettyPrint a2
-    // | NeqExpr (a1, a2) -> prettyPrint a1 + " != " + prettyPrint a2
-    // | GtExpr (a1, a2) -> prettyPrint a1 + " > " + prettyPrint a2
-    // | GteExpr (a1, a2) -> prettyPrint a1 + " >= " + prettyPrint a2
-    // | LtExpr (a1, a2) -> prettyPrint a1 + " < " + prettyPrint a2
-    // | LteExpr (a1, a2) -> prettyPrint a1 + " <= " + prettyPrint a2
-and prettyPrintAExpr a = 
-    match a with
-    | Num n -> string n
-    | Str s -> string s
+    | C c -> prettyPrintCmd c
+    | A a -> prettyPrintAExpr a
+
+
 let analysis (src: string) : string =
     match parse Parser.startCommand (src) with
         | Ok ast ->
             Console.Error.WriteLine("> {0}", ast)
-            prettyPrint ast
+            prettyPrint (C ast)
         | Error e -> "Parse error: {0}"

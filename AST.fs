@@ -47,3 +47,7 @@ type command =
 // and guardedCommand =
 //     | Condition of (booleanExpr * command)
 //     | Choice of (guardedCommand * guardedCommand)
+
+type AST = 
+    | A of arithmeticExpr
+    | C of command
