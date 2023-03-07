@@ -76,30 +76,31 @@ let rec prettyPrint (ast:AST) =
     | C c -> prettyPrintCmd c
     | A a -> prettyPrintAExpr a
     | B b -> prettyPrintBExpr b
+    | GC gc -> prettyPrintGC gc
 
 
 let analysis (src: string) : string =
-    // try to parse arithmetic expression
+    // try to parse command
+    match parse Parser.startCommand (src) with
+                        | Ok ast ->
+                            Console.Error.WriteLine("> {0}", ast)
+                            prettyPrint (C ast)   
+                        | _ -> 
+    // try to parse guarded command
+    match parse Parser.startGuardedCommand (src) with
+                        | Ok ast ->
+                            Console.Error.WriteLine("> {0}", ast)
+                            prettyPrint (GC ast)       
+                        | _ ->
+    // try to parse arithmetic expression    
     match parse Parser.start (src) with
-        | Ok ast ->
-            Console.Error.WriteLine("> {0}", ast)
-            prettyPrint (A ast)
-        | Error e -> 
+                        | Ok ast ->
+                                Console.Error.WriteLine("> {0}", ast)
+                                prettyPrint (A ast)    
+                        | _ ->               
     // try to parse boolean expression
     match parse Parser.startBooleanExpr (src) with
                         | Ok ast ->
                             Console.Error.WriteLine("> {0}", ast)
                             prettyPrint (B ast)
-                        | Error e ->  
-    // try to parse command
-    match parse Parser.startCommand (src) with
-                        | Ok ast ->
-                            Console.Error.WriteLine("> {0}", ast)
-                            prettyPrint (C ast)
-                        | Error e -> 
-    // try to parse guarded command
-    match parse Parser.startGuardedCommand (src) with
-                        | Ok ast ->
-                            Console.Error.WriteLine("> {0}", ast)
-                            prettyPrint (GC ast)
                         | Error e -> "Parse error: {0}" + e.Message
