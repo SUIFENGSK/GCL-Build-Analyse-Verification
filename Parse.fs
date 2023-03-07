@@ -85,22 +85,22 @@ let analysis (src: string) : string =
                         | Ok ast ->
                             Console.Error.WriteLine("> {0}", ast)
                             prettyPrint (C ast)   
-                        | _ -> 
-    // try to parse guarded command
-    match parse Parser.startGuardedCommand (src) with
-                        | Ok ast ->
-                            Console.Error.WriteLine("> {0}", ast)
-                            prettyPrint (GC ast)       
-                        | _ ->
-    // try to parse arithmetic expression    
-    match parse Parser.start (src) with
-                        | Ok ast ->
-                                Console.Error.WriteLine("> {0}", ast)
-                                prettyPrint (A ast)    
-                        | _ ->               
-    // try to parse boolean expression
-    match parse Parser.startBooleanExpr (src) with
-                        | Ok ast ->
-                            Console.Error.WriteLine("> {0}", ast)
-                            prettyPrint (B ast)
+    //                     | _ -> 
+    // // try to parse guarded command
+    // match parse Parser.startGuardedCommand (src) with
+    //                     | Ok ast ->
+    //                         Console.Error.WriteLine("> {0}", ast)
+    //                         prettyPrint (GC ast)       
+    //                     | _ ->
+    // // try to parse arithmetic expression    
+    // match parse Parser.start (src) with
+    //                     | Ok ast ->
+    //                             Console.Error.WriteLine("> {0}", ast)
+    //                             prettyPrint (A ast)    
+    //                     | _ ->               
+    // // try to parse boolean expression
+    // match parse Parser.startBooleanExpr (src) with
+    //                     | Ok ast ->
+    //                         Console.Error.WriteLine("> {0}", ast)
+    //                         prettyPrint (B ast)
                         | Error e -> "Parse error: {0}" + e.Message
