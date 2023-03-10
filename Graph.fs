@@ -28,19 +28,15 @@ type Edge = { source: Node;
               target: Node
             }
 
-// partial problem with the number of nodes, the number of nodes is not correct (start and end)
-// do edgeGuardedCommand doesn't work right now, ArrAssign has not been tested yet
-// and this is only for the non-deterministic graph
-
 let edgesNonDeterministic (ast: AST, qS: int, qF: int) : List<Edge> =
     let mutable q = 0
     let rec edgeCommand (c: command) (qS : int) (qF: int) : List<Edge> =
         match c with
         | Skip -> [{source = "q"+ (string qS); label = CLabel c; target = "q"+ (string (qF))}]
         | Seq (c1, c2) -> 
-                                             q <- q + 1
-                                             let _q = q
-                                             edgeCommand c1 qS _q @ edgeCommand c2 _q qF
+                                    q <- q + 1
+                                    let qTemp = q
+                                    edgeCommand c1 qS qTemp @ edgeCommand c2 qTemp qF
         | If gc -> edgeGuardedCommand gc qS qF
         | Do gc -> edgeGuardedCommand gc qS qS @ (doneGuardedCommand gc qS qF)
         | Assign (s, a) -> [{source = "q"+ (string qS); label =  CLabel(Assign (s, a)); target = "q"+ (string (qF))}]
@@ -49,9 +45,9 @@ let edgesNonDeterministic (ast: AST, qS: int, qF: int) : List<Edge> =
     and edgeGuardedCommand (gc: guardedCommand) (qS : int) (qF: int) : List<Edge> =
         match gc with
         | Condition (b, c) -> 
-                                                     q <- q + 1
-                                                     let _q = q
-                                                     [{source = "q"+ (string qS); label = BLabel b ; target = "q"+ (string (_q))}] @ edgeCommand c _q qF
+                                        q <- q + 1
+                                        let qTemp = q
+                                        [{source = "q"+ (string qS); label = BLabel b ; target = "q"+ (string (qTemp))}] @ edgeCommand c qTemp qF
         | Choice (gc1, gc2) -> (edgeGuardedCommand gc1 qS qF) @ (edgeGuardedCommand gc2 qS qF)
     
     and doneGuardedCommand (gc: guardedCommand) (qS : int) (qF: int) : List<Edge> =
@@ -63,8 +59,42 @@ let edgesNonDeterministic (ast: AST, qS: int, qF: int) : List<Edge> =
         | C (c) -> edgeCommand c qS qF
         | _ -> []
 
+let edgesDeterministic (ast: AST, qS: int, qF: int) : List<Edge> =
+    let mutable q = 0
+    let rec edgeCommand (c: command) (qS : int) (qF: int) : List<Edge> =
+        match c with
+        | Skip -> [{source = "q"+ (string qS); label = CLabel c; target = "q"+ (string (qF))}]
+        | Seq (c1, c2) -> 
+                                    q <- q + 1
+                                    let qTemp = q
+                                    edgeCommand c1 qS qTemp @ edgeCommand c2 qTemp qF
+        | If gc -> 
+                                    let (e,_) = edgeGuardedCommand gc qS qF False 
+                                    e
+        | Do gc -> 
+                                    let (e, b) = (edgeGuardedCommand gc qS qS False) 
+                                    e @ [{source = "q"+ (string qS); label = BLabel (NotExpr(b)) ; target = "q"+ (string (qF))}]
+        | Assign (s, a) -> [{source = "q"+ (string qS); label =  CLabel(Assign (s, a)); target = "q"+ (string (qF))}]
+        | ArrAssign (s, a1, a2) -> [{source = "q"+ (string qS); label = CLabel(ArrAssign (s, a1, a2)); target = "q"+ (string (qF))}]
+    
+    and edgeGuardedCommand (gc: guardedCommand) (qS : int) (qF: int) (bExpr: booleanExpr) : List<Edge>*booleanExpr =
+        match gc with
+        | Condition (b, c) -> 
+                                        q <- q + 1
+                                        let qTemp = q
+                                        ([{source = "q"+ (string qS); label = BLabel (AndExpr(ParenBExpr(b),ParenBExpr(NotExpr(bExpr)))) ; target = "q"+ (string (qTemp))}] @ edgeCommand c qTemp qF, ParenBExpr(OrExpr(ParenBExpr(b),ParenBExpr(bExpr))))
+        | Choice (gc1, gc2) -> 
+                                        let (e1, b1) = edgeGuardedCommand gc1 qS qF bExpr
+                                        let (e2, b2) = edgeGuardedCommand gc2 qS qF b1
+                                        (e1 @ e2, b2)    
+
+    match ast with
+        | C (c) -> edgeCommand c qS qF
+        | _ -> []
+
 let astToProgramGraph (ast: AST)(input: Input) : List<Edge> = 
-    edgesNonDeterministic (ast, 0, 1000)
+    if input.determinism = Deterministic then edgesDeterministic (ast, 0, 1000)
+    else edgesNonDeterministic (ast, 0, 1000)
 
 
 let edgeToDot (e: Edge) : string =
@@ -87,8 +117,7 @@ let programGraphToDot (pg: List<Edge>) : string =
 let analysis (src: string) (input: Input) : Output =
         match parse Parser.startCommand (src) with
                         | Ok ast ->
-                            let programGraph = astToProgramGraph (C ast) input
-                            // Console.Error.WriteLine ("> {0}", programGraph)
+                            let programGraph = astToProgramGraph (C ast) input                            
                             let dotString = programGraphToDot programGraph
                             {dot = dotString}
                         | Error e -> {dot = ""}
