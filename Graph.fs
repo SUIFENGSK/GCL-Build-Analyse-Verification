@@ -46,11 +46,11 @@ let edges (ast: AST, qS: Node, qF: Node, n: int) : List<Edge> =
     and edgeGuardedCommand (gc: guardedCommand) (n : int) : List<Edge> =
         match gc with
         | Condition (b, c) -> [{source = "q"+ (string n); label = BLabel b ; target = "q"+ (string (n+1))}] @ (edgeCommand c (n+1))
-        | Choice (gc1, gc2) -> (edgeGuardedCommand gc1 (n+1)) @ (edgeGuardedCommand gc2 (n+1))
+        | Choice (gc1, gc2) -> (edgeGuardedCommand gc1 (n)) @ (edgeGuardedCommand gc2 (n+1))
     
     and doneGuardedCommand (gc: guardedCommand) (n : int) : List<Edge> =
         match gc with
-        | Condition (b, c) -> [{source = "q"+ (string n); label = BLabel (NotExpr (ParenBExpr(b))) ; target = "qF"}] 
+        | Condition (b, c) -> [{source = "q"+ (string n); label = BLabel (NotExpr (ParenBExpr(b))) ; target = qF}] 
         | Choice (gc1, gc2) -> (doneGuardedCommand gc1 (n+1)) @ (doneGuardedCommand gc2 (n+1))
 
     match ast with
