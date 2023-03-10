@@ -32,7 +32,7 @@ type Edge = { source: Node;
 // do edgeGuardedCommand doesn't work right now, ArrAssign has not been tested yet
 // and this is only for the non-deterministic graph
 
-let edges (ast: AST, qS: int, qF: int) : List<Edge> =
+let edgesNonDeterministic (ast: AST, qS: int, qF: int) : List<Edge> =
     let mutable q = 0
     let rec edgeCommand (c: command) (qS : int) (qF: int) : List<Edge> =
         match c with
@@ -63,8 +63,8 @@ let edges (ast: AST, qS: int, qF: int) : List<Edge> =
         | C (c) -> edgeCommand c qS qF
         | _ -> []
 
-let astToProgramGraph (ast: AST) : List<Edge> = 
-    edges (ast, 0, 1000)
+let astToProgramGraph (ast: AST)(input: Input) : List<Edge> = 
+    edgesNonDeterministic (ast, 0, 1000)
 
 
 let edgeToDot (e: Edge) : string =
@@ -74,7 +74,7 @@ let edgeToDot (e: Edge) : string =
         | CLabel c -> prettyPrint (C c)
         | GCLabel gc -> prettyPrint (GC gc)
         | BLabel be -> prettyPrint (B be)
-    e.source + " -> " + e.target + " [label=\"" + labelStr + "\"] ;"
+    e.source + " -> " + e.target + " [label=" + "\"" + labelStr + "\"] ;"
 
 let rec edgesToDot (pg: List<Edge>) : string =
     match pg with
@@ -87,7 +87,7 @@ let programGraphToDot (pg: List<Edge>) : string =
 let analysis (src: string) (input: Input) : Output =
         match parse Parser.startCommand (src) with
                         | Ok ast ->
-                            let programGraph = astToProgramGraph (C ast)
+                            let programGraph = astToProgramGraph (C ast) input
                             // Console.Error.WriteLine ("> {0}", programGraph)
                             let dotString = programGraphToDot programGraph
                             {dot = dotString}

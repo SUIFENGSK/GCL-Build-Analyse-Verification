@@ -70,7 +70,7 @@ arithmeticExpr3:
     | PLUS arithmeticExpr3 { UPlusExpr($2) }
     | MINUS arithmeticExpr3 { UMinusExpr($2) }
     | NUM { Num($1) }
-    | LPAR arithmeticExpr0 RPAR { $2 }
+    | LPAR arithmeticExpr0 RPAR { ParenAExpr($2) }
     | VARNAME { Str($1) }
     | VARNAME LBRACK arithmeticExpr0 RBRACK { ArrAccess($1, $3) }
 
@@ -112,7 +112,7 @@ booleanExpr2:
     | arithmeticExpr0 GTE arithmeticExpr0 { GteExpr($1,$3) }
     | arithmeticExpr0 LT arithmeticExpr0 { LtExpr($1,$3) }
     | arithmeticExpr0 LTE arithmeticExpr0 { LteExpr($1,$3) }
-    | LPAR booleanExpr0 RPAR { $2 }
+    | LPAR booleanExpr0 RPAR { ParenBExpr($2) }
 
 
 // Again, the code annotation specifies the result of parsing
