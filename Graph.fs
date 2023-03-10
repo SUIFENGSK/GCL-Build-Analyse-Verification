@@ -34,19 +34,19 @@ type Edge = { source: Node;
 
 let edges (ast: AST, qS: Node, qF: Node, n: int) : List<Edge> =
 
-    let rec edgeCommand (c: command) (n : int) : List<Edge> =
+    let rec edgeCommand (c: command) (n : int) (t: int) : List<Edge> =
         match c with
-        | Skip -> [{source = "q"+ (string n); label = CLabel c; target = "q"+ (string (n+1))}]
-        | Seq (c1, c2) ->  (edgeCommand c1 n) @ (edgeCommand c2 (n+1))
-        | If gc -> edgeGuardedCommand gc n
-        | Do gc -> (doneGuardedCommand gc n) @ edgeGuardedCommand gc (n)
-        | Assign (s, a) -> [{source = "q"+ (string n); label =  CLabel(Assign (s, a)); target = "q"+ (string (n+1))}]
-        | ArrAssign (s, a1, a2) -> [{source = "q"+ (string n); label = CLabel(ArrAssign (s, a1, a2)); target = "q"+ (string (n+1))}]
+        | Skip -> [{source = "q"+ (string n); label = CLabel c; target = "q"+ (string (t))}]
+        | Seq (c1, c2) ->  (edgeCommand c1 n (t)) @ (edgeCommand c2 (n+1) (t+1))
+        | If gc -> edgeGuardedCommand gc n (n+1)
+        | Do gc -> (doneGuardedCommand gc n) @ edgeGuardedCommand gc (n) (n+1)
+        | Assign (s, a) -> [{source = "q"+ (string n); label =  CLabel(Assign (s, a)); target = "q"+ (string (t))}]
+        | ArrAssign (s, a1, a2) -> [{source = "q"+ (string n); label = CLabel(ArrAssign (s, a1, a2)); target = "q"+ (string (t))}]
     
-    and edgeGuardedCommand (gc: guardedCommand) (n : int) : List<Edge> =
+    and edgeGuardedCommand (gc: guardedCommand) (n : int) (m: int) : List<Edge> =
         match gc with
-        | Condition (b, c) -> [{source = "q"+ (string n); label = BLabel b ; target = "q"+ (string (n+1))}] @ (edgeCommand c (n+1))
-        | Choice (gc1, gc2) -> (edgeGuardedCommand gc1 (n)) @ (edgeGuardedCommand gc2 (n+1))
+        | Condition (b, c) -> [{source = "q"+ (string n); label = BLabel b ; target = "q"+ (string (m))}] @ (edgeCommand c (m) (n-1))
+        | Choice (gc1, gc2) -> (edgeGuardedCommand gc1 (n) (n+1)) @ (edgeGuardedCommand gc2 (n) (n+2))
     
     and doneGuardedCommand (gc: guardedCommand) (n : int) : List<Edge> =
         match gc with
@@ -54,7 +54,7 @@ let edges (ast: AST, qS: Node, qF: Node, n: int) : List<Edge> =
         | Choice (gc1, gc2) -> (doneGuardedCommand gc1 (n+1)) @ (doneGuardedCommand gc2 (n+1))
 
     match ast with
-        | C (c) -> edgeCommand c n
+        | C (c) -> edgeCommand c n (n+1)
         | _ -> []
 
 let astToProgramGraph (ast: AST) : List<Edge> = 
@@ -62,13 +62,14 @@ let astToProgramGraph (ast: AST) : List<Edge> =
 
 
 let edgeToDot (e: Edge) : string =
+    let doubleQuotes = '"'
     let labelStr =
         match e.label with
         | ALabel ae -> prettyPrint (A ae)
         | CLabel c -> prettyPrint (C c)
         | GCLabel gc -> prettyPrint (GC gc)
         | BLabel be -> prettyPrint (B be)
-    e.source + " -> " + e.target + " [label=" + labelStr + "]" + " ;"
+    e.source + " -> " + e.target + " [label=" + "\"" + labelStr + "\"" + "]" + " ;"
 
 let rec edgesToDot (pg: List<Edge>) : string =
     match pg with
