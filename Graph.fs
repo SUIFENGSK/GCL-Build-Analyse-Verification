@@ -92,8 +92,8 @@ let edgesDeterministic (ast: AST, qS: int, qF: int) : List<Edge> =
         | C (c) -> edgeCommand c qS qF
         | _ -> []
 
-let astToProgramGraph (ast: AST)(input: Input) : List<Edge> = 
-    if input.determinism = Deterministic then edgesDeterministic (ast, 0, 1000)
+let astToProgramGraph (ast: AST)(input: Determinism) : List<Edge> = 
+    if input = Deterministic then edgesDeterministic (ast, 0, 1000)
     else edgesNonDeterministic (ast, 0, 1000)
 
 
@@ -117,7 +117,10 @@ let programGraphToDot (pg: List<Edge>) : string =
 let analysis (src: string) (input: Input) : Output =
         match parse Parser.startCommand (src) with
                         | Ok ast ->
-                            let programGraph = astToProgramGraph (C ast) input                            
+                            let programGraph = astToProgramGraph (C ast) input.determinism                            
                             let dotString = programGraphToDot programGraph
                             {dot = dotString}
                         | Error e -> {dot = ""}
+
+// dotnet run graph "skip" "{determinism: {Case:'Deterministic'}}"
+// dotnet run graph "skip" "{determinism: {Case:'NonDeterministic'}}"
