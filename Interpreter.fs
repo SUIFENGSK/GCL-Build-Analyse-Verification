@@ -76,23 +76,6 @@ let rec evalBExpr bExpr memory =
     | LteExpr (a1,a2) -> (evalAExpr a1 memory) <= (evalAExpr a2 memory)
     | ParenBExpr b -> evalBExpr b memory
 
-let rec prettyPrintBExpr (b:booleanExpr) = 
-    match b with
-    | True -> "true"
-    | False -> "false"
-    | AndExpr (b1, b2) -> prettyPrint (B b1) + " & " + prettyPrint (B b2)
-    | OrExpr (b1, b2) -> prettyPrint (B b1) + " | " + prettyPrint (B b2)
-    | AndAndExpr (b1, b2) -> prettyPrint (B b1) + " && " + prettyPrint (B b2)
-    | OrOrExpr (b1, b2) -> prettyPrint (B b1) + " || " + prettyPrint (B b2)
-    | NotExpr b -> "!" + prettyPrint (B b)
-    | EqExpr (a1, a2) -> prettyPrint (A a1) + " = " + prettyPrint (A a2)
-    | NeqExpr (a1, a2) -> prettyPrint (A a1) + " != " + prettyPrint (A a2)
-    | GtExpr (a1, a2) -> prettyPrint (A a1) + " > " + prettyPrint (A a2)
-    | GteExpr (a1, a2) -> prettyPrint (A a1) + " >= " + prettyPrint (A a2)
-    | LtExpr (a1, a2) -> prettyPrint (A a1) + " < " + prettyPrint (A a2)
-    | LteExpr (a1, a2) -> prettyPrint (A a1) + " <= " + prettyPrint (A a2)
-    | ParenBExpr b -> "(" + prettyPrint (B b) + ")"
-
 let rec semantic (label: Label, memory: InterpreterMemory) : Option<InterpreterMemory> =
     match label with
     | CLabel c -> match c with
