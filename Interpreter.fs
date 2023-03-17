@@ -37,7 +37,8 @@ type Configuration<'node> =
 
 type Output =
     { execution_sequence: List<Configuration<string>>
-      final: TerminationState }
+      final : TerminationState
+      }
 
 let stringifyNode (internalNode: Node) : string =
     // TODO: implement for internal node type
@@ -47,19 +48,71 @@ let prepareConfiguration (c: Configuration<Node>) : Configuration<string> =
     { node = stringifyNode c.node
       memory = c.memory }
 
-let semantic (label: Label, memory: InterpreterMemory) : Option<InterpreterMemory> =
+let rec evalAExpr aExpr memory =
+   match aExpr with
+    | Num n -> Convert.ToInt32(n)
+    | Str s -> memory.variables.[s]
+    | PlusExpr (a1, a2) -> evalAExpr a1 memory + evalAExpr a2 memory
+    | MinusExpr (a1, a2) -> evalAExpr a1 memory - evalAExpr a2 memory
+    | TimesExpr (a1, a2) -> evalAExpr a1 memory * evalAExpr a2 memory
+    | DivExpr (a1, a2) -> evalAExpr a1 memory / evalAExpr a2 memory
+    | UPlusExpr a -> evalAExpr a memory
+    | UMinusExpr a -> - evalAExpr a memory
+    | ArrAccess (s, a) -> let indexNumber = evalAExpr a memory
+                          memory.arrays.[s].[indexNumber]
+    | PowExpr  (a1, a2) -> Convert.ToInt32(Math.Pow(float(evalAExpr a1 memory), float(evalAExpr a2 memory)))
+    | ParenAExpr a -> evalAExpr a memory
+
+let rec evalBExpr bExpr memory =
+    match bExpr with
+    | True -> true
+    | False -> false
+    | AndExpr (b1,b2) -> evalBExpr b1 memory && evalBExpr b2 memory // should be &&&
+    | OrExpr (b1,b2) -> evalBExpr b1 memory || evalBExpr b2 memory  // should be |||
+    | AndAndExpr (b1,b2) -> evalBExpr b1 memory && evalBExpr b2 memory
+    | OrOrExpr (b1,b2) -> evalBExpr b1 memory || evalBExpr b2 memory
+    | NotExpr b -> not (evalBExpr b memory)
+    | EqExpr (a1,a2) -> evalAExpr a1 memory = evalAExpr a2 memory
+    | NeqExpr (a1,a2) -> evalAExpr a1 memory <> evalAExpr a2 memory
+    | GtExpr (a1,a2) -> evalAExpr a1 memory > evalAExpr a2 memory
+    | GteExpr (a1,a2) -> evalAExpr a1 memory >= evalAExpr a2 memory
+    | LtExpr (a1,a2) -> evalAExpr a1 memory < evalAExpr a2 memory
+    | LteExpr (a1,a2) -> evalAExpr a1 memory <= evalAExpr a2 memory
+    | ParenBExpr b -> evalBExpr b memory
+
+let rec semantic (label: Label, memory: InterpreterMemory) : Option<InterpreterMemory> =
     match label with
     | ALabel a -> Some(memory)
     | CLabel c -> match c with
                   | Skip -> Some(memory)
+                  | Seq (c1, c2) -> Console.Error.WriteLine("Seq")
+                                    semantic (CLabel c1, memory) |> Option.bind (fun m -> semantic (CLabel c2, m))
+                  | Assign (s, a) -> let number = evalAExpr a memory
+                                     Console.Error.WriteLine("Assigning " + number.ToString() + " to " + s)
+                                     Some({memory with variables = memory.variables.Add(s, number)})
+                  | ArrAssign (s, a1, a2) -> let indexNumber = evalAExpr a1 memory
+                                             let valueNumber = evalAExpr a2 memory
+                                             let newMemory = memory.arrays[s] |> List.mapi (fun i x -> if i = indexNumber then valueNumber else x)
+                                             Some ({memory with arrays = memory.arrays.Add(s, newMemory)})
+                  | If gc ->  Console.Error.WriteLine("If")
+                              semantic (GCLabel gc, memory)
+                  // | Do gc -> Some(memory)
                   | _ -> None
-                  // | Seq (c1, c2) -> memory
-                  // | If gc -> memory
-                  // | Do gc -> memory
-                  // | Assign (s, a) -> memory
-                  // | ArrAssign (s, a1, a2) -> memory
-    | GCLabel gc -> Some(memory)
-    | BLabel b -> Some(memory)
+
+    | GCLabel gc -> match gc with
+                    | Condition (b,c) -> let bool = evalBExpr b memory
+                                         Console.Error.WriteLine(bool)
+                                         if bool then semantic (CLabel c, memory)
+                                         else Some(memory)
+                    | Choice (gc1, gc2) -> let m1 = semantic (GCLabel gc1, memory)
+                                           let m2 = semantic (GCLabel gc2, memory)
+                                           if m1.IsSome then m1
+                                           else if m2.IsSome then m2
+                                           else None 
+                                           
+    | BLabel b -> let bool = evalBExpr b memory
+                  if bool then Some(memory)
+                  else Some(memory)
 
 // Def. 1.11
 let rec executionSteps (programGraph: List<Edge>, q: Node, memory: InterpreterMemory) : List<Configuration<Node>> =
@@ -74,7 +127,8 @@ let rec executionSteps (programGraph: List<Edge>, q: Node, memory: InterpreterMe
                    [ { node = target; memory = mprime.Value } ] @ executionSteps(es, target, mprime.Value)
                  else
                    executionSteps(es, target, mprime.Value)
-    | [] -> []
+
+    | [] -> List.empty
 
 // Def. 1.13
 let rec executionSequence (programGraph: List<Edge>, startNode: Node, memory: InterpreterMemory, traceLength: int) : List<Configuration<Node>>*TerminationState =
@@ -83,7 +137,7 @@ let rec executionSequence (programGraph: List<Edge>, startNode: Node, memory: In
     match traceLength, nextStates with
     | 0, _ -> ([{node = startNode; memory=memory}], Running)
     | _, [] -> let finalState = if startNode.Equals("q1000") then Terminated else Stuck
-               ([{node = startNode; memory=memory}], finalState) 
+               ([{node = startNode;  memory=memory}], finalState) 
     | _, conf :: confList ->  let next= executionSequence (programGraph, conf.node, conf.memory, traceLength-1)
                               [{node = startNode; memory=memory}] @ fst(next) , snd(next)                           
 
@@ -93,10 +147,14 @@ let analysis (src: string) (input: Input) : Output =
     match parse Parser.startCommand (src) with
           | Ok ast ->
                                let programGraph = astToProgramGraph (C ast) input.determinism
-                               Console.Error.WriteLine (input.trace_length)
+                               
                                let (trace, final) = executionSequence (programGraph, "q0", input.assignment, input.trace_length)                         
+                              //  Console.Error.WriteLine ( { execution_sequence = List.map prepareConfiguration trace
+                              //                              final = final })
                                { execution_sequence = List.map prepareConfiguration trace
-                                 final = final }
+                                 final = final
+                                 }
           | Error e -> failwith "TODO"
-
-// dotnet run interpreter 'skip;skip;skip' "{determinism: {Case:'Deterministic'}, assignment: {variables:{},arrays:{}}, trace_length:10}"
+// ./dev/win.exe --open
+// x:=5; if x>10 -> x:=x+1 fi
+// dotnet run interpreter 'x:=5; if x>10 -> x:=x+1 fi' "{determinism: {Case:'Deterministic'}, assignment: {variables:{},arrays:{}}, trace_length:10}"
