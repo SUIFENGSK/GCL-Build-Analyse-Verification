@@ -52,10 +52,10 @@ let rec evalAExpr aExpr memory =
    match aExpr with
     | Num n -> Convert.ToInt32(n)
     | Str s -> memory.variables.[s]
-    | PlusExpr (a1, a2) -> evalAExpr a1 memory + evalAExpr a2 memory
-    | MinusExpr (a1, a2) -> evalAExpr a1 memory - evalAExpr a2 memory
-    | TimesExpr (a1, a2) -> evalAExpr a1 memory * evalAExpr a2 memory
-    | DivExpr (a1, a2) -> evalAExpr a1 memory / evalAExpr a2 memory
+    | PlusExpr (a1, a2) -> (evalAExpr a1 memory) + (evalAExpr a2 memory)
+    | MinusExpr (a1, a2) -> (evalAExpr a1 memory) - (evalAExpr a2 memory)
+    | TimesExpr (a1, a2) -> (evalAExpr a1 memory) * (evalAExpr a2 memory)
+    | DivExpr (a1, a2) -> (evalAExpr a1 memory) / (evalAExpr a2 memory)
     | UPlusExpr a -> evalAExpr a memory
     | UMinusExpr a -> - evalAExpr a memory
     | ArrAccess (s, a) -> let indexNumber = evalAExpr a memory
@@ -67,52 +67,64 @@ let rec evalBExpr bExpr memory =
     match bExpr with
     | True -> true
     | False -> false
-    | AndExpr (b1,b2) -> evalBExpr b1 memory && evalBExpr b2 memory // should be &&&
-    | OrExpr (b1,b2) -> evalBExpr b1 memory || evalBExpr b2 memory  // should be |||
-    | AndAndExpr (b1,b2) -> evalBExpr b1 memory && evalBExpr b2 memory
-    | OrOrExpr (b1,b2) -> evalBExpr b1 memory || evalBExpr b2 memory
+    | AndExpr (b1,b2) -> (evalBExpr b1 memory) && (evalBExpr b2 memory) // should be &&&
+    | OrExpr (b1,b2) -> (evalBExpr b1 memory) || (evalBExpr b2 memory)  // should be |||
+    | AndAndExpr (b1,b2) -> (evalBExpr b1 memory) && (evalBExpr b2 memory)
+    | OrOrExpr (b1,b2) -> (evalBExpr b1 memory) || (evalBExpr b2 memory)
     | NotExpr b -> not (evalBExpr b memory)
-    | EqExpr (a1,a2) -> evalAExpr a1 memory = evalAExpr a2 memory
-    | NeqExpr (a1,a2) -> evalAExpr a1 memory <> evalAExpr a2 memory
-    | GtExpr (a1,a2) -> evalAExpr a1 memory > evalAExpr a2 memory
-    | GteExpr (a1,a2) -> evalAExpr a1 memory >= evalAExpr a2 memory
-    | LtExpr (a1,a2) -> evalAExpr a1 memory < evalAExpr a2 memory
-    | LteExpr (a1,a2) -> evalAExpr a1 memory <= evalAExpr a2 memory
+    | EqExpr (a1,a2) -> (evalAExpr a1 memory) = (evalAExpr a2 memory)
+    | NeqExpr (a1,a2) -> (evalAExpr a1 memory) <> (evalAExpr a2 memory)
+    | GtExpr (a1,a2) -> (evalAExpr a1 memory) > (evalAExpr a2 memory)
+    | GteExpr (a1,a2) -> (evalAExpr a1 memory) >= (evalAExpr a2 memory)
+    | LtExpr (a1,a2) -> (evalAExpr a1 memory) < (evalAExpr a2 memory)
+    | LteExpr (a1,a2) -> (evalAExpr a1 memory) <= (evalAExpr a2 memory)
     | ParenBExpr b -> evalBExpr b memory
+
+let rec prettyPrintBExpr (b:booleanExpr) = 
+    match b with
+    | True -> "true"
+    | False -> "false"
+    | AndExpr (b1, b2) -> prettyPrint (B b1) + " & " + prettyPrint (B b2)
+    | OrExpr (b1, b2) -> prettyPrint (B b1) + " | " + prettyPrint (B b2)
+    | AndAndExpr (b1, b2) -> prettyPrint (B b1) + " && " + prettyPrint (B b2)
+    | OrOrExpr (b1, b2) -> prettyPrint (B b1) + " || " + prettyPrint (B b2)
+    | NotExpr b -> "!" + prettyPrint (B b)
+    | EqExpr (a1, a2) -> prettyPrint (A a1) + " = " + prettyPrint (A a2)
+    | NeqExpr (a1, a2) -> prettyPrint (A a1) + " != " + prettyPrint (A a2)
+    | GtExpr (a1, a2) -> prettyPrint (A a1) + " > " + prettyPrint (A a2)
+    | GteExpr (a1, a2) -> prettyPrint (A a1) + " >= " + prettyPrint (A a2)
+    | LtExpr (a1, a2) -> prettyPrint (A a1) + " < " + prettyPrint (A a2)
+    | LteExpr (a1, a2) -> prettyPrint (A a1) + " <= " + prettyPrint (A a2)
+    | ParenBExpr b -> "(" + prettyPrint (B b) + ")"
 
 let rec semantic (label: Label, memory: InterpreterMemory) : Option<InterpreterMemory> =
     match label with
-    | ALabel a -> Some(memory)
     | CLabel c -> match c with
                   | Skip -> Some(memory)
-                  | Seq (c1, c2) -> Console.Error.WriteLine("Seq")
-                                    semantic (CLabel c1, memory) |> Option.bind (fun m -> semantic (CLabel c2, m))
+                
                   | Assign (s, a) -> let number = evalAExpr a memory
-                                     Console.Error.WriteLine("Assigning " + number.ToString() + " to " + s)
                                      Some({memory with variables = memory.variables.Add(s, number)})
                   | ArrAssign (s, a1, a2) -> let indexNumber = evalAExpr a1 memory
                                              let valueNumber = evalAExpr a2 memory
                                              let newMemory = memory.arrays[s] |> List.mapi (fun i x -> if i = indexNumber then valueNumber else x)
                                              Some ({memory with arrays = memory.arrays.Add(s, newMemory)})
-                  | If gc ->  Console.Error.WriteLine("If")
-                              semantic (GCLabel gc, memory)
-                  // | Do gc -> Some(memory)
                   | _ -> None
-
-    | GCLabel gc -> match gc with
-                    | Condition (b,c) -> let bool = evalBExpr b memory
-                                         Console.Error.WriteLine(bool)
-                                         if bool then semantic (CLabel c, memory)
-                                         else Some(memory)
-                    | Choice (gc1, gc2) -> let m1 = semantic (GCLabel gc1, memory)
-                                           let m2 = semantic (GCLabel gc2, memory)
-                                           if m1.IsSome then m1
-                                           else if m2.IsSome then m2
-                                           else None 
                                            
-    | BLabel b -> let bool = evalBExpr b memory
+    | BLabel b -> 
+                  let bool = evalBExpr b memory
+                //   Console.Error.WriteLine( prettyPrintBExpr b)
+                //   Console.Error.WriteLine("bool: " + bool.ToString() + "\n")
                   if bool then Some(memory)
-                  else Some(memory)
+                  else None
+    | _ -> None
+
+let rec findNewTarget (programGraph: List<Edge>, edge: Edge) : List<Edge>*Node*Node =
+    match programGraph with
+    | e::es -> let newSource = e.source
+               let newTarget = e.target
+               if newSource.Equals(edge.source) && not (newTarget.Equals(edge.target)) then ([e]@es, newSource, newTarget)
+               else findNewTarget(es, edge)
+    | [] ->    ([],edge.source,edge.target) // return the source of the edge if no new target is found (stuck)
 
 // Def. 1.11
 let rec executionSteps (programGraph: List<Edge>, q: Node, memory: InterpreterMemory) : List<Configuration<Node>> =
@@ -124,16 +136,24 @@ let rec executionSteps (programGraph: List<Edge>, q: Node, memory: InterpreterMe
               else 
                  let mprime = semantic(label, memory)
                  if mprime.IsSome then 
-                   [ { node = target; memory = mprime.Value } ] @ executionSteps(es, target, mprime.Value)
+                    [ { node = target; memory = mprime.Value } ] @ executionSteps(es, target, mprime.Value)
                  else
-                   executionSteps(es, target, mprime.Value)
-
-    | [] -> List.empty
+                    let newTarget = findNewTarget(es, e)     
+                    let (newpg, newS, newT) = newTarget
+                    // Console.Error.WriteLine("pg: " + newpg.ToString())
+                    // Console.Error.WriteLine("new source: " + newS)
+                    // Console.Error.WriteLine("new target: " + newT)
+                    if newpg.IsEmpty then [] // if the new target is the same as the current node, then there is no new target (stuck)
+                    else
+                    executionSteps(newpg, newS, memory)            
+    | [] -> []
 
 // Def. 1.13
 let rec executionSequence (programGraph: List<Edge>, startNode: Node, memory: InterpreterMemory, traceLength: int) : List<Configuration<Node>>*TerminationState =
     let nextStates = executionSteps (programGraph, startNode, memory)
-    //Console.Error.WriteLine (nextStates)
+    // Console.Error.WriteLine("Current node: " + startNode)
+    // Console.Error.WriteLine("Current memory: " + memory.ToString())
+    // Console.Error.WriteLine("Next states: " + nextStates.ToString())
     match traceLength, nextStates with
     | 0, _ -> ([{node = startNode; memory=memory}], Running)
     | _, [] -> let finalState = if startNode.Equals("q1000") then Terminated else Stuck
@@ -146,8 +166,7 @@ let analysis (src: string) (input: Input) : Output =
 
     match parse Parser.startCommand (src) with
           | Ok ast ->
-                               let programGraph = astToProgramGraph (C ast) input.determinism
-                               
+                               let programGraph = astToProgramGraph (C ast) input.determinism                            
                                let (trace, final) = executionSequence (programGraph, "q0", input.assignment, input.trace_length)                         
                               //  Console.Error.WriteLine ( { execution_sequence = List.map prepareConfiguration trace
                               //                              final = final })
@@ -155,6 +174,7 @@ let analysis (src: string) (input: Input) : Output =
                                  final = final
                                  }
           | Error e -> failwith "TODO"
+
 // ./dev/win.exe --open
 // x:=5; if x>10 -> x:=x+1 fi
 // dotnet run interpreter 'x:=5; if x>10 -> x:=x+1 fi' "{determinism: {Case:'Deterministic'}, assignment: {variables:{},arrays:{}}, trace_length:10}"

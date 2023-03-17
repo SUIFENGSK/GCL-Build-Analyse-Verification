@@ -53,7 +53,16 @@ let edgesNonDeterministic (ast: AST, qS: int, qF: int) : List<Edge> =
     and doneGuardedCommand (gc: guardedCommand) (qS : int) (qF: int) : List<Edge> =
         match gc with
         | Condition (b, c) -> [{source = "q"+ (string qS); label = BLabel (NotExpr (ParenBExpr(b))) ; target = "q"+ (string qF)}]
-        | Choice (gc1, gc2) -> (doneGuardedCommand gc1 qS qF) @ (doneGuardedCommand gc2 qS qF) 
+        | Choice (gc1, gc2) -> 
+                                                                 let gcBlabel1 = (doneGuardedCommand gc1 qS qF).Head.label
+                                                                 let gcBExpr1 = match gcBlabel1 with
+                                                                                | BLabel b -> b
+                                                                                | _ -> failwith "Not a boolean label"
+                                                                 let gcBlabel2= (doneGuardedCommand gc2 qS qF).Head.label
+                                                                 let gcBExpr2 = match gcBlabel2 with
+                                                                                | BLabel b -> b
+                                                                                | _ -> failwith "Not a boolean label"
+                                                                 [{source = "q"+ (string qS); label = BLabel(AndAndExpr(gcBExpr1,gcBExpr2)) ; target = "q"+ (string qF)}]
 
     match ast with
         | C (c) -> edgeCommand c qS qF
