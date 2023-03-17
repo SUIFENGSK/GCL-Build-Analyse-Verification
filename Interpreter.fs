@@ -21,10 +21,7 @@ type Input =
       assignment: InterpreterMemory
       trace_length: int }
 
-// TODO: Change this to you internal version of node
-// If your node type is defined in graph, consider using the following:
 type Node = Graph.Node
-//type Node = string
 
 type TerminationState =
     | Running
@@ -41,7 +38,6 @@ type Output =
       }
 
 let stringifyNode (internalNode: Node) : string =
-    // TODO: implement for internal node type
     internalNode
 
 let prepareConfiguration (c: Configuration<Node>) : Configuration<string> =
@@ -112,8 +108,6 @@ let rec semantic (label: Label, memory: InterpreterMemory) : Option<InterpreterM
                                            
     | BLabel b -> 
                   let bool = evalBExpr b memory
-                //   Console.Error.WriteLine( prettyPrintBExpr b)
-                //   Console.Error.WriteLine("bool: " + bool.ToString() + "\n")
                   if bool then Some(memory)
                   else None
     | _ -> None
@@ -140,9 +134,6 @@ let rec executionSteps (programGraph: List<Edge>, q: Node, memory: InterpreterMe
                  else
                     let newTarget = findNewTarget(es, e)     
                     let (newpg, newS, newT) = newTarget
-                    // Console.Error.WriteLine("pg: " + newpg.ToString())
-                    // Console.Error.WriteLine("new source: " + newS)
-                    // Console.Error.WriteLine("new target: " + newT)
                     if newpg.IsEmpty then [] // if the new target is the same as the current node, then there is no new target (stuck)
                     else
                     executionSteps(newpg, newS, memory)            
@@ -151,9 +142,6 @@ let rec executionSteps (programGraph: List<Edge>, q: Node, memory: InterpreterMe
 // Def. 1.13
 let rec executionSequence (programGraph: List<Edge>, startNode: Node, memory: InterpreterMemory, traceLength: int) : List<Configuration<Node>>*TerminationState =
     let nextStates = executionSteps (programGraph, startNode, memory)
-    // Console.Error.WriteLine("Current node: " + startNode)
-    // Console.Error.WriteLine("Current memory: " + memory.ToString())
-    // Console.Error.WriteLine("Next states: " + nextStates.ToString())
     match traceLength, nextStates with
     | 0, _ -> ([{node = startNode; memory=memory}], Running)
     | _, [] -> let finalState = if startNode.Equals("q1000") then Terminated else Stuck
@@ -168,13 +156,11 @@ let analysis (src: string) (input: Input) : Output =
           | Ok ast ->
                                let programGraph = astToProgramGraph (C ast) input.determinism                            
                                let (trace, final) = executionSequence (programGraph, "q0", input.assignment, input.trace_length)                         
-                              //  Console.Error.WriteLine ( { execution_sequence = List.map prepareConfiguration trace
-                              //                              final = final })
                                { execution_sequence = List.map prepareConfiguration trace
                                  final = final
                                  }
-          | Error e -> failwith "TODO"
+          | Error e -> failwith "Error parsing input"
 
+// Run script
 // ./dev/win.exe --open
-// x:=5; if x>10 -> x:=x+1 fi
 // dotnet run interpreter 'x:=5; if x>10 -> x:=x+1 fi' "{determinism: {Case:'Deterministic'}, assignment: {variables:{},arrays:{}}, trace_length:10}"
