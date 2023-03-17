@@ -95,13 +95,13 @@ let rec semantic (label: Label, memory: InterpreterMemory) : Option<InterpreterM
                   else None
     | _ -> None
 
-let rec findNewTarget (programGraph: List<Edge>, edge: Edge) : List<Edge>*Node*Node =
+let rec findNewTarget (programGraph: List<Edge>, edge: Edge) : List<Edge>*Node =
     match programGraph with
     | e::es -> let newSource = e.source
                let newTarget = e.target
-               if newSource.Equals(edge.source) && not (newTarget.Equals(edge.target)) then ([e]@es, newSource, newTarget)
+               if newSource.Equals(edge.source) && not (newTarget.Equals(edge.target)) then ([e]@es, newSource)
                else findNewTarget(es, edge)
-    | [] ->    ([],edge.source,edge.target) // return the source of the edge if no new target is found (stuck)
+    | [] ->    ([],edge.source) // return the source of the edge if no new target is found (stuck)
 
 // Def. 1.11
 let rec executionSteps (programGraph: List<Edge>, q: Node, memory: InterpreterMemory) : List<Configuration<Node>> =
@@ -115,11 +115,9 @@ let rec executionSteps (programGraph: List<Edge>, q: Node, memory: InterpreterMe
                  if mprime.IsSome then 
                     [ { node = target; memory = mprime.Value } ] @ executionSteps(es, target, mprime.Value)
                  else
-                    let newTarget = findNewTarget(es, e)     
-                    let (newpg, newS, newT) = newTarget
+                    let (newpg, newSource) = findNewTarget(es, e) 
                     if newpg.IsEmpty then [] // if the new target is the same as the current node, then there is no new target (stuck)
-                    else
-                    executionSteps(newpg, newS, memory)            
+                    else executionSteps(newpg, newSource, memory)            
     | [] -> []
 
 // Def. 1.13
