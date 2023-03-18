@@ -46,22 +46,37 @@ let prepareConfiguration (c: Configuration<Node>) : Configuration<string> =
 
 let rec evalAExpr aExpr memory =
    match aExpr with
-    | Num n -> Convert.ToInt32(n)
+    | Num n -> try
+               Convert.ToInt32(n)
+               with :? OverflowException -> failwith "Overflow"
     | Str s -> memory.variables.[s]
-    | PlusExpr (a1, a2) -> (evalAExpr a1 memory) + (evalAExpr a2 memory)
-    | MinusExpr (a1, a2) -> (evalAExpr a1 memory) - (evalAExpr a2 memory)
-    | TimesExpr (a1, a2) -> (evalAExpr a1 memory) * (evalAExpr a2 memory)
+    | PlusExpr (a1, a2) ->  try
+                            (evalAExpr a1 memory) + (evalAExpr a2 memory)
+                            with :? OverflowException -> failwith "Overflow"
+    | MinusExpr (a1, a2) -> try
+                            (evalAExpr a1 memory) - (evalAExpr a2 memory)
+                            with :? OverflowException -> failwith "Overflow"
+    | TimesExpr (a1, a2) -> try
+                            (evalAExpr a1 memory) * (evalAExpr a2 memory)
+                            with :? OverflowException -> failwith "Overflow"
     | DivExpr (a1, a2) -> let m = evalAExpr a1 memory
                           let n = evalAExpr a2 memory
                           if n = 0 then failwith "Division by zero" 
-                          else m / n
+                          else try 
+                                  m / n
+                               with :? OverflowException -> failwith "Overflow"
     | UPlusExpr a -> evalAExpr a memory
     | UMinusExpr a -> - evalAExpr a memory
     | ArrAccess (s, a) -> let indexNumber = evalAExpr a memory
                           if indexNumber < 0 then failwith "Negative index"
                           else if memory.arrays.[s].Length <= indexNumber then failwith "Index out of bounds"
                           else memory.arrays.[s].[indexNumber]
-    | PowExpr  (a1, a2) -> Convert.ToInt32(Math.Pow(float(evalAExpr a1 memory), float(evalAExpr a2 memory)))
+    | PowExpr  (a1, a2) -> let m = evalAExpr a1 memory
+                           let n = evalAExpr a2 memory
+                           if n < 0 then failwith "Negative exponent"
+                           else try
+                                Convert.ToInt32(Math.Pow(float(m), float(n)))
+                                with :? OverflowException -> failwith "Overflow"
     | ParenAExpr a -> evalAExpr a memory
 
 let rec evalBExpr bExpr memory =
