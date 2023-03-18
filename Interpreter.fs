@@ -51,8 +51,10 @@ let rec evalAExpr aExpr memory =
     | PlusExpr (a1, a2) -> (evalAExpr a1 memory) + (evalAExpr a2 memory)
     | MinusExpr (a1, a2) -> (evalAExpr a1 memory) - (evalAExpr a2 memory)
     | TimesExpr (a1, a2) -> (evalAExpr a1 memory) * (evalAExpr a2 memory)
-    | DivExpr (a1, a2) -> if (evalAExpr a2 memory) = 0 then failwith "Division by zero" else
-                          (evalAExpr a1 memory) / (evalAExpr a2 memory)
+    | DivExpr (a1, a2) -> let m = evalAExpr a1 memory
+                          let n = evalAExpr a2 memory
+                          if n = 0 then failwith "Division by zero" 
+                          else m / n
     | UPlusExpr a -> evalAExpr a memory
     | UMinusExpr a -> - evalAExpr a memory
     | ArrAccess (s, a) -> let indexNumber = evalAExpr a memory
