@@ -58,7 +58,9 @@ let rec evalAExpr aExpr memory =
     | UPlusExpr a -> evalAExpr a memory
     | UMinusExpr a -> - evalAExpr a memory
     | ArrAccess (s, a) -> let indexNumber = evalAExpr a memory
-                          memory.arrays.[s].[indexNumber]
+                          if indexNumber < 0 then failwith "Negative index"
+                          else if memory.arrays.[s].Length <= indexNumber then failwith "Index out of bounds"
+                          else memory.arrays.[s].[indexNumber]
     | PowExpr  (a1, a2) -> Convert.ToInt32(Math.Pow(float(evalAExpr a1 memory), float(evalAExpr a2 memory)))
     | ParenAExpr a -> evalAExpr a memory
 
