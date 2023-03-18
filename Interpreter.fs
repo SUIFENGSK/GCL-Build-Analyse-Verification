@@ -51,7 +51,8 @@ let rec evalAExpr aExpr memory =
     | PlusExpr (a1, a2) -> (evalAExpr a1 memory) + (evalAExpr a2 memory)
     | MinusExpr (a1, a2) -> (evalAExpr a1 memory) - (evalAExpr a2 memory)
     | TimesExpr (a1, a2) -> (evalAExpr a1 memory) * (evalAExpr a2 memory)
-    | DivExpr (a1, a2) -> (evalAExpr a1 memory) / (evalAExpr a2 memory)
+    | DivExpr (a1, a2) -> if (evalAExpr a2 memory) = 0 then failwith "Division by zero" else
+                          (evalAExpr a1 memory) / (evalAExpr a2 memory)
     | UPlusExpr a -> evalAExpr a memory
     | UMinusExpr a -> - evalAExpr a memory
     | ArrAccess (s, a) -> let indexNumber = evalAExpr a memory
@@ -63,8 +64,8 @@ let rec evalBExpr bExpr memory =
     match bExpr with
     | True -> true
     | False -> false
-    | AndExpr (b1,b2) -> (evalBExpr b1 memory) && (evalBExpr b2 memory) // should be &&&
-    | OrExpr (b1,b2) -> (evalBExpr b1 memory) || (evalBExpr b2 memory)  // should be |||
+    | AndExpr (b1,b2) -> (evalBExpr b1 memory) && (evalBExpr b2 memory)
+    | OrExpr (b1,b2) -> (evalBExpr b1 memory) || (evalBExpr b2 memory) 
     | AndAndExpr (b1,b2) -> (evalBExpr b1 memory) && (evalBExpr b2 memory)
     | OrOrExpr (b1,b2) -> (evalBExpr b1 memory) || (evalBExpr b2 memory)
     | NotExpr b -> not (evalBExpr b memory)
@@ -81,27 +82,32 @@ let rec semantic (label: Label, memory: InterpreterMemory) : Option<InterpreterM
     | CLabel c -> match c with
                   | Skip -> Some(memory)
                 
-                  | Assign (s, a) -> let number = evalAExpr a memory
-                                     Some({memory with variables = memory.variables.Add(s, number)})
-                  | ArrAssign (s, a1, a2) -> let indexNumber = evalAExpr a1 memory
-                                             let valueNumber = evalAExpr a2 memory
-                                             let newMemory = memory.arrays[s] |> List.mapi (fun i x -> if i = indexNumber then valueNumber else x)
-                                             Some ({memory with arrays = memory.arrays.Add(s, newMemory)})
+                  | Assign (s, a) -> try let number = evalAExpr a memory
+                                         Some({memory with variables = memory.variables.Add(s, number)})
+                                     with _ -> None
+                  | ArrAssign (s, a1, a2) -> try
+                                                let indexNumber = evalAExpr a1 memory
+                                                if indexNumber < 0 then failwith "Negative index"
+                                                let valueNumber = evalAExpr a2 memory
+                                                let newMemory = memory.arrays[s] |> List.mapi (fun i x -> if i = indexNumber then valueNumber else x)
+                                                Some ({memory with arrays = memory.arrays.Add(s, newMemory)})
+                                             with _ -> None
                   | _ -> None
                                            
-    | BLabel b -> 
-                  let bool = evalBExpr b memory
-                  if bool then Some(memory)
-                  else None
+    | BLabel b -> try
+                    let bool = evalBExpr b memory
+                    if bool then Some(memory)
+                    else None
+                  with _ -> None
     | _ -> None
 
-let rec findNewTarget (programGraph: List<Edge>, edge: Edge) : List<Edge>*Node =
+let rec findNewTarget (programGraph: List<Edge>, edge: Edge) : List<Edge>*Edge =
     match programGraph with
     | e::es -> let newSource = e.source
                let newTarget = e.target
-               if newSource.Equals(edge.source) && not (newTarget.Equals(edge.target)) then ([e]@es, newSource)
+               if newSource.Equals(edge.source) && not (newTarget.Equals(edge.target)) then ([e]@es, e)
                else findNewTarget(es, edge)
-    | [] ->    ([],edge.source) // return the source of the edge if no new target is found (stuck)
+    | [] ->    ([],edge) // return the source of the edge if no new target is found (stuck)
 
 // Def. 1.11
 let rec executionSteps (programGraph: List<Edge>, q: Node, memory: InterpreterMemory) : List<Configuration<Node>> =
@@ -115,9 +121,9 @@ let rec executionSteps (programGraph: List<Edge>, q: Node, memory: InterpreterMe
                  if mprime.IsSome then 
                     [ { node = target; memory = mprime.Value } ] @ executionSteps(es, target, mprime.Value)
                  else
-                    let (newpg, newSource) = findNewTarget(es, e) 
+                    let (newpg, newEdge) = findNewTarget(es, e) 
                     if newpg.IsEmpty then [] // if the new target is the same as the current node, then there is no new target (stuck)
-                    else executionSteps(newpg, newSource, memory)            
+                    else executionSteps(newpg, newEdge.source, memory)            
     | [] -> []
 
 // Def. 1.13
@@ -135,7 +141,8 @@ let analysis (src: string) (input: Input) : Output =
 
     match parse Parser.startCommand (src) with
           | Ok ast ->
-                               let programGraph = astToProgramGraph (C ast) input.determinism                            
+                               let programGraph = astToProgramGraph (C ast) input.determinism
+                               //Console.Error.WriteLine(programGraph)                            
                                let (trace, final) = executionSequence (programGraph, "q0", input.assignment, input.trace_length)                         
                                { execution_sequence = List.map prepareConfiguration trace
                                  final = final
@@ -144,4 +151,5 @@ let analysis (src: string) (input: Input) : Output =
 
 // Run script
 // ./dev/win.exe --open
-// dotnet run interpreter 'x:=5; if x>10 -> x:=x+1 fi' "{determinism: {Case:'Deterministic'}, assignment: {variables:{},arrays:{}}, trace_length:10}"
+// dotnet run interpreter 'if 1/0=1/0 -> skip [] true -> x:=2 fi' "{determinism: {Case:'NonDeterministic'}, assignment: {variables:{},arrays:{}}, trace_length:10}"
+// dotnet run interpreter 'if 1/0=1/0 -> skip [] true -> x:=2 fi' "{determinism: {Case:'Deterministic'}, assignment: {variables:{},arrays:{}}, trace_length:10}"
