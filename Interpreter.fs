@@ -46,8 +46,7 @@ let prepareConfiguration (c: Configuration<Node>) : Configuration<string> =
 
 let rec evalAExpr aExpr memory =
    match aExpr with
-    | Num n -> try
-               Convert.ToInt32(n)
+    | Num n -> try n
                with :? OverflowException -> failwith "Overflow"
     | Str s -> memory.variables.[s]
     | PlusExpr (a1, a2) ->  try
@@ -75,7 +74,7 @@ let rec evalAExpr aExpr memory =
                            let n = evalAExpr a2 memory
                            if n < 0 then failwith "Negative exponent"
                            else try
-                                Convert.ToInt32(Math.Pow(float(m), float(n)))
+                                Convert.ToInt32(Math.Pow(m,n))
                                 with :? OverflowException -> failwith "Overflow"
     | ParenAExpr a -> evalAExpr a memory
 

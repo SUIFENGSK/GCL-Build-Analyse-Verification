@@ -4,7 +4,7 @@ module AST
 
 // a  ::=  n  |  x  |  A[a]  |  a + a  |  a - a  |  a * a  |  a / a  |  - a  |  a ^ a  |  (a)
 type arithmeticExpr = 
-    | Num of float
+    | Num of int
     | Str of string
     | ArrAccess of (string * arithmeticExpr)
     | PlusExpr of (arithmeticExpr * arithmeticExpr)

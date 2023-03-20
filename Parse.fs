@@ -34,12 +34,12 @@ let rec prettyPrint (ast:AST) =
         | ArrAssign (s, a1, a2) -> s + "[" + prettyPrint (A a1) + "] := " + prettyPrint (A a2)
         | Skip -> "skip"
         | Seq (c1, c2) -> prettyPrint (C c1) + "; \n" + prettyPrint (C c2)
-        | If gc -> "if " + prettyPrintGC gc + " fi"
-        | Do gc -> "do " + prettyPrintGC gc + " od"
+        | If gc -> "if " + prettyPrintGC gc + "\nfi"
+        | Do gc -> "do " + prettyPrintGC gc + "\nod"
     and prettyPrintGC (gc:guardedCommand) =
         match gc with
-        | Condition (b, c) -> prettyPrint (B b) + " -> " + prettyPrint (C c)
-        | Choice (gc1, gc2) -> prettyPrintGC gc1 + " [] " + prettyPrintGC gc2
+        | Condition (b, c) -> prettyPrint (B b) + " ->\n" + "\t" + prettyPrint (C c)
+        | Choice (gc1, gc2) -> prettyPrintGC gc1 + "\n[] " + prettyPrintGC gc2
         
     let rec prettyPrintAExpr (a:arithmeticExpr) = 
         match a with

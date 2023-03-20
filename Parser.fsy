@@ -4,7 +4,7 @@ open AST
 %}
 
 // Declare the tokens (terminal symbols)
-%token <float> NUM
+%token <int> NUM
 %token <string> VARNAME
 %token TIMES DIV PLUS MINUS POW LPAR RPAR EOF STRING SKIP SEMICOLON 
 %token ASSIGN LBRACK RBRACK IFSTART IFEND DOSTART DOEND CONDITION BRACKETS
