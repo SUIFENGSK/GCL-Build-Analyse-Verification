@@ -83,7 +83,7 @@ let rec evalBExpr bExpr memory =
     | True -> true
     | False -> false
     | AndExpr (b1,b2) -> (evalBExpr b1 memory) && (evalBExpr b2 memory)
-    | OrExpr (b1,b2) -> (evalBExpr b1 memory) || (evalBExpr b2 memory) 
+    | OrExpr (b1,b2) ->  ((evalBExpr b1 memory) || (evalBExpr b2 memory)) && ((evalBExpr b2 memory) || (evalBExpr b1 memory))
     | AndAndExpr (b1,b2) -> (evalBExpr b1 memory) && (evalBExpr b2 memory)
     | OrOrExpr (b1,b2) -> (evalBExpr b1 memory) || (evalBExpr b2 memory)
     | NotExpr b -> not (evalBExpr b memory)
@@ -171,3 +171,4 @@ let analysis (src: string) (input: Input) : Output =
 // ./dev/win.exe --open
 // dotnet run interpreter 'if 1/0=1/0 -> skip [] true -> x:=2 fi' "{determinism: {Case:'NonDeterministic'}, assignment: {variables:{},arrays:{}}, trace_length:10}"
 // dotnet run interpreter 'if 1/0=1/0 -> skip [] true -> x:=2 fi' "{determinism: {Case:'Deterministic'}, assignment: {variables:{},arrays:{}}, trace_length:10}"
+// dotnet run interpreter 'if (true | ((1 / 0) = 0)) -> skip fi' "{determinism: {Case:'Deterministic'}, assignment: {variables:{},arrays:{}}, trace_length:10}"
