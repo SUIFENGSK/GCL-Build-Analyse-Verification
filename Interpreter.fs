@@ -161,7 +161,7 @@ let analysis (src: string) (input: Input) : Output =
           | Ok ast ->
                                let programGraph = astToProgramGraph (C ast) input.determinism
                                //Console.Error.WriteLine(programGraph)                            
-                               let (trace, final) = executionSequence (programGraph, "q0", input.assignment, input.trace_length)                         
+                               let (trace, final) = executionSequence (programGraph, "q0", input.assignment, input.trace_length-1)                         
                                { execution_sequence = List.map prepareConfiguration trace
                                  final = final
                                  }
