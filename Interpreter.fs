@@ -172,3 +172,7 @@ let analysis (src: string) (input: Input) : Output =
 // dotnet run interpreter 'if 1/0=1/0 -> skip [] true -> x:=2 fi' "{determinism: {Case:'NonDeterministic'}, assignment: {variables:{},arrays:{}}, trace_length:10}"
 // dotnet run interpreter 'if 1/0=1/0 -> skip [] true -> x:=2 fi' "{determinism: {Case:'Deterministic'}, assignment: {variables:{},arrays:{}}, trace_length:10}"
 // dotnet run interpreter 'if (true | ((1 / 0) = 0)) -> skip fi' "{determinism: {Case:'Deterministic'}, assignment: {variables:{},arrays:{}}, trace_length:10}"
+
+// git push script
+// git remote -v
+// git push origin master
