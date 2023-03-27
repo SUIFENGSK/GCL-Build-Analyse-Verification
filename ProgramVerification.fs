@@ -14,11 +14,11 @@ type Input = unit
 type Output =
     { verification_conditions: List<SerializedPredicate> }
 
-let mutable freshIdx = - 1
+let mutable freshIdx = -1
 
 let fresh () =
     freshIdx <- freshIdx + 1
-    $"_f{freshIdx}"
+    $"_x{freshIdx}"
 
 let analysis (src: string) (input: Input) : Output =
     let (P, C, Q) =
@@ -52,7 +52,7 @@ let analysis (src: string) (input: Input) : Output =
                                   | Max (lhs, rhs) -> Function (Max (subA(varTobeChanged, freshVar, lhs), subA(varTobeChanged, freshVar, rhs)))
                                   | Count (x, idx) -> Function (Count (x, subA(varTobeChanged, freshVar, idx)))
                                   | LogicalCount (x, idx) -> Function (LogicalCount (x, idx))
-                                  | Length x -> Function (Length freshVar)
+                                  | Length x -> if x = varTobeChanged then Function (Length freshVar) else Function (Length x)
                                   | LogicalLength x -> Function (LogicalLength x)
                                   | Fac x -> Function (Fac (subA(varTobeChanged, freshVar, x)))
                                   | Fib x -> Function (Fib (subA(varTobeChanged, freshVar, x)))
@@ -107,3 +107,9 @@ let analysis (src: string) (input: Input) : Output =
 // {((((a > 0) && (b = 0)) && (c = 0)) && (d < 0))} d := b ; b := d ; if (d <= d) -> c := -77 fi {((((a = 0) && (b = 0)) && (c > 0)) && (d = 0))}
 // ((exists _f2 :: (((d <= d) & (exists _f1 :: ((exists _f0 :: (((((a > 0) && (_f1 = 0)) && (_f2 = 0)) && (_f0 < 0)) & (d = _f1))) & (b = d)))) & (c = -77))) ==> ((((a = 0) && (b = 0)) && (c > 0)) && (d = 0)))
 // ((exists _f0 :: (((d <= d) & (exists _f1 :: ((exists _f2 :: (((((a > 0) && (_f1 = 0)) && (_f0 = 0)) && (_f2 < 0)) & (d = _f1))) & (b = d)))) & (c = -77))) ==> ((((a = 0) && (b = 0)) && (c > 0)) && (d = 0)))
+
+// To do:
+// 1. failure example
+// {((((a < 0) && (b > 0)) && (c > 0)) && (d < 0))} if (false || ((39 <= 39) | ((a = d) || !!true))) -> d := d fi {true}
+// 2. Parse problem
+// divide with 0, do command
