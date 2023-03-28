@@ -101,15 +101,5 @@ let analysis (src: string) (input: Input) : Output =
 
 // Run script
 // ./dev/win.exe --open
-// dotnet run program-verification '{((((a > 0) && (b = 0)) && (c < 0)) && (d = 0))} if ((65 <= d) && true) -> b := c fi ; if !false -> c := d fi ; c := 36 ; if ((99 = b) || (c > 59)) -> b := d fi ; if (59 = a) -> d := c fi ; if (b < 27) -> d := b fi ; b := 81 ; b := -86 ; if (a != c) -> b := b fi ; a := 39 {true}' "{determinism: {Case:'NonDeterministic'}}"
-// {x>0} skip {x>=0}
-
-// {((((a > 0) && (b = 0)) && (c = 0)) && (d < 0))} d := b ; b := d ; if (d <= d) -> c := -77 fi {((((a = 0) && (b = 0)) && (c > 0)) && (d = 0))}
-// ((exists _f2 :: (((d <= d) & (exists _f1 :: ((exists _f0 :: (((((a > 0) && (_f1 = 0)) && (_f2 = 0)) && (_f0 < 0)) & (d = _f1))) & (b = d)))) & (c = -77))) ==> ((((a = 0) && (b = 0)) && (c > 0)) && (d = 0)))
-// ((exists _f0 :: (((d <= d) & (exists _f1 :: ((exists _f2 :: (((((a > 0) && (_f1 = 0)) && (_f0 = 0)) && (_f2 < 0)) & (d = _f1))) & (b = d)))) & (c = -77))) ==> ((((a = 0) && (b = 0)) && (c > 0)) && (d = 0)))
-
-// To do:
-// 1. failure example
-// {((((a < 0) && (b > 0)) && (c > 0)) && (d < 0))} if (false || ((39 <= 39) | ((a = d) || !!true))) -> d := d fi {true}
-// 2. Parse problem
-// divide with 0, do command
+// dotnet run program-verification '{true} a:=min(3,4) {true}' "{determinism: {Case:'NonDeterministic'}}"
+// dotnet run program-verification '{true} a:=count(e,4) {true}' "{determinism: {Case:'NonDeterministic'}}"
