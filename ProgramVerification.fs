@@ -18,7 +18,7 @@ let mutable freshIdx = -1
 
 let fresh () =
     freshIdx <- freshIdx + 1
-    $"_x{freshIdx}"
+    $"_f{freshIdx}"
 
 let analysis (src: string) (input: Input) : Output =
     let (P, C, Q) =
