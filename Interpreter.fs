@@ -148,7 +148,7 @@ let rec executionSteps (programGraph: List<Edge>, q: Node, memory: InterpreterMe
 let rec executionSequence (programGraph: List<Edge>, startNode: Node, memory: InterpreterMemory, traceLength: int) : List<Configuration<Node>>*TerminationState =
     let nextStates = executionSteps (programGraph, startNode, memory)
     match traceLength, nextStates with
-    | 0, _ -> ([{node = startNode; memory=memory}], Running)
+    | 1, _ -> ([{node = startNode; memory=memory}], Running)
     | _, [] -> let finalState = if startNode.Equals("q1000") then Terminated else Stuck
                ([{node = startNode;  memory=memory}], finalState) 
     | _, conf :: confList ->  let next= executionSequence (programGraph, conf.node, conf.memory, traceLength-1)
@@ -161,7 +161,7 @@ let analysis (src: string) (input: Input) : Output =
           | Ok ast ->
                                let programGraph = astToProgramGraph (C ast) input.determinism
                                //Console.Error.WriteLine(programGraph)                            
-                               let (trace, final) = executionSequence (programGraph, "q0", input.assignment, input.trace_length-1)                         
+                               let (trace, final) = executionSequence (programGraph, "q0", input.assignment, input.trace_length)                         
                                { execution_sequence = List.map prepareConfiguration trace
                                  final = final
                                  }
