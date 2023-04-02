@@ -91,7 +91,7 @@ let edgesDeterministic (ast: AST, qS: int, qF: int) : List<Edge> =
         | Condition (b, c) -> 
                                         q <- q + 1
                                         let qTemp = q
-                                        ([{source = "q"+ (string qS); label = BLabel (AndExpr(ParenBExpr(b),ParenBExpr(NotExpr(bExpr)))) ; target = "q"+ (string (qTemp))}] @ edgeCommand c qTemp qF, ParenBExpr(OrExpr(ParenBExpr(b),ParenBExpr(bExpr))))
+                                        ([{source = "q"+ (string qS); label = BLabel (ParenBExpr(AndExpr(b,NotExpr(bExpr)))) ; target = "q"+ (string (qTemp))}] @ edgeCommand c qTemp qF, ParenBExpr(OrExpr(b,bExpr)))
         | Choice (gc1, gc2) -> 
                                         let (e1, b1) = edgeGuardedCommand gc1 qS qF bExpr
                                         let (e2, b2) = edgeGuardedCommand gc2 qS qF b1
