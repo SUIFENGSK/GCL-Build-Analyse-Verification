@@ -173,7 +173,7 @@ let updateVarSignInMem (mem:Set<SignAssignment>) (s:string) (a:arithmeticExpr) :
 let updateArrSignInMem (mem: Set<SignAssignment>) (s: string) (a1: arithmeticExpr) (a2: arithmeticExpr) : Set<SignAssignment> = 
     let resInd = analysisAExpr a1 mem
     let newArrSigns = analysisAExpr a2 mem
-    let originalArrsigns = Set.fold (fun set mem -> Set.union set (Map.tryFind s mem.arrays |> Option.defaultValue Set.empty)) Set.empty mem
+    //let originalArrsigns = Set.fold (fun set mem -> Set.union set (Map.tryFind s mem.arrays |> Option.defaultValue Set.empty)) Set.empty mem
     //Console.Error.WriteLine("originalArrsigns: " + (Set.toList originalArrsigns).ToString())
     Console.Error.WriteLine("newArrSigns: " + (Set.toList newArrSigns).ToString())
     let rec newMem newArrSigns mem s : Set<SignAssignment> =
@@ -197,11 +197,11 @@ let updateArrSignInMem (mem: Set<SignAssignment>) (s: string) (a1: arithmeticExp
                     )
                 Set.union updatedMem (newMem xs updatedMem s)
     let newMem = newMem (Set.toList newArrSigns) mem s
-    // Add originalArrsigns to newMem
+    // Add newArrSigns to newMem
     Console.Error.WriteLine("newMem: " + (Set.toList newMem).ToString())
     
     // Not working for now (To-do: fix this)
-    Set.union newMem (Set.map (fun sa -> { sa with arrays = Map.add s newArrSigns sa.arrays }) newMem)                                 
+    Set.union newMem (Set.map (fun sa -> { sa with arrays = Map.add s newArrSigns sa.arrays }) newMem)    
                             
 
 let rec analysisBExpr (b:booleanExpr) (mem:Set<SignAssignment>): Set<bool> = 
