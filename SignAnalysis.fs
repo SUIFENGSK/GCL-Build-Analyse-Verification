@@ -90,7 +90,7 @@ let abstractDiv (set1:Set<Sign>) (set2:Set<Sign>) : Set<Sign> =
                         | Zero, Positive -> Set.add Zero set
                         | Positive, Negative -> (Set.add Negative set).Add(Zero)
                         | Positive, Positive -> (Set.add Positive set).Add(Zero)
-                        | _, Zero -> Set.empty // division by zero
+                        | _, Zero -> set // division by zero
                         ) set set2
                      ) Set.empty set1
 
@@ -114,11 +114,13 @@ let abstractPow (set1:Set<Sign>) (set2:Set<Sign>) : Set<Sign> =
             Set.fold (fun set el1 -> 
             Set.fold (fun set el2 -> 
                       match el1, el2 with
-                        | Positive, _ -> Set.add Positive set
-                        | Zero, _ -> Set.add Zero set
+                        | _, Negative -> set // negative to negative power
+                        | Positive, Positive -> Set.add Positive set
+                        | Positive, Zero -> Set.add Positive set
+                        | Zero, Positive -> Set.add Zero set
+                        | Zero, Zero -> Set.add Positive set
                         | Negative, Positive -> (Set.add Negative set).Add(Positive)
                         | Negative, Zero -> Set.add Positive set
-                        | Negative, Negative -> Set.empty // negative to negative power
                         ) set set2
                      ) Set.empty set1 
 
@@ -264,19 +266,20 @@ let rec analysisAExpr (a:arithmeticExpr) (mem:Set<SignAssignment>) : Set<Sign> =
     | ParenAExpr a -> analysisAExpr a mem
 
 let updateVarSignInMem (mem:Set<SignAssignment>) (s:string) (a:arithmeticExpr) : Set<SignAssignment> = 
-    let newVarSigns = analysisAExpr a mem
-    Console.Error.WriteLine("newVarSigns: " + (Set.toList newVarSigns).ToString())
-    // delete old signs and then add new signs to mem
-    let rec newMem newVarSigns mem s :Set<SignAssignment>=
-        match newVarSigns with
-        | [] -> mem
-        | x::xs -> 
-                    let updatedMem = 
-                        mem|> Set.map (fun sa ->
-                                       { sa with variables = Map.add s x sa.variables }
-                                       )
-                    Set.union(newMem xs updatedMem s) updatedMem
-    if Set.isEmpty newVarSigns then Set.empty else newMem (Set.toList newVarSigns) mem s
+    Console.Error.WriteLine("checkmem"+s+ (Set.toList mem).ToString())
+    let mutable newVarSigns= Set.empty
+    let mutable newMem = Set.empty
+    Set.iter (fun sa -> 
+              let newSign = analysisAExpr a (Set.singleton sa)
+              Set.iter (fun x -> 
+                                        (newVarSigns <- Set.add x newVarSigns
+                                         newMem <- Set.add { sa with variables = Map.add s x sa.variables } newMem
+                                        )) newSign
+              
+              ) mem
+    //analysisAExpr a mem
+    Console.Error.WriteLine("newVarSigns: " + s + (Set.toList newVarSigns).ToString())
+    newMem
 
 // To be implemented
 let updateArrSignInMem (mem: Set<SignAssignment>) (s: string) (a1: arithmeticExpr) (a2: arithmeticExpr) : Set<SignAssignment> = 
@@ -322,48 +325,26 @@ let rec analysisBExpr (b:booleanExpr) (mem:Set<SignAssignment>): Set<bool> =
     | OrOrExpr (b1,b2) -> abstractOrOr (analysisBExpr b1 mem) (analysisBExpr b2 mem)
     | NotExpr b -> abstractNot (analysisBExpr b mem)
     | EqExpr (a1,a2) -> abstractEq (analysisAExpr a1 mem) (analysisAExpr a2 mem)
-    | NeqExpr (a1,a2) -> 
-                                                          // let set1 = analysisAExpr a1 mem
-                                                          // let set2 = analysisAExpr a2 mem
-                                                          // Console.Error.WriteLine("set1: " + (Set.toList set1).ToString())
-                                                          // Console.Error.WriteLine("set2: " + (Set.toList set2).ToString())
-                                                          // Console.Error.WriteLine("checkMem" + (Set.toList mem).ToString())
-      
-                                                          abstractNeq (analysisAExpr a1 mem) (analysisAExpr a2 mem)
+    | NeqExpr (a1,a2) -> abstractNeq (analysisAExpr a1 mem) (analysisAExpr a2 mem)
     | GtExpr (a1,a2) -> abstractGt (analysisAExpr a1 mem) (analysisAExpr a2 mem)
     | GteExpr (a1,a2) -> abstractGte (analysisAExpr a1 mem) (analysisAExpr a2 mem)
     | LtExpr (a1,a2) -> abstractLt (analysisAExpr a1 mem) (analysisAExpr a2 mem)
     | LteExpr (a1,a2) -> abstractLte (analysisAExpr a1 mem) (analysisAExpr a2 mem)
     | ParenBExpr b -> analysisBExpr b mem
 
-let removeLastElement (set: Set<'a>) : Set<'a> =
-    match Set.toList set |> List.rev with
-    | [] -> set
-    | hd :: tl -> Set.ofList (List.rev tl)
-
 
 let analysisFunctionS (action:Label) (memSet:Set<SignAssignment>): Set<SignAssignment> = 
     match action with
     | BLabel bol -> //S[[𝑏]](𝑀) = {(̂𝜎1,𝜎2) ∣ (̂𝜎1,𝜎2) ∈ 𝑀 ∧ 𝗍𝗍 ∈B[[𝑏]](𝜎1,𝜎2)}
-                                  //Console.Error.WriteLine("memSet: " + (Set.toList memSet).ToString())
-                                  let result =
-                                    Set.fold (
-                                        fun set memory ->
-                                            Console.Error.WriteLine("set: " + (Set.toList set).ToString())
-                                            Console.Error.WriteLine("memory: " + (Set.toList memory).ToString())
-                                            //Console.Error.WriteLine("bol: " + bol.ToString())
-                                            //Console.Error.WriteLine("analysisBExpr bol memory: " + (Set.toList (analysisBExpr bol memory)).ToString())
-                                            if Set.contains true (analysisBExpr bol memory) 
-                                            then 
-                                                 Console.Error.WriteLine "true"
-                                                 Set.union memory set
-                                            else 
-                                                 Console.Error.WriteLine "false"
-                                                 Console.Error.WriteLine(removeLastElement(memory))                                               
-                                                 removeLastElement(memory)  //Check HER!
-                                    ) Set.empty (Set.singleton memSet)
-                                  //Console.Error.WriteLine("result: " + (Set.toList result).ToString())
-                                  result
+                                  let mutable finalResult = Set.empty
+                                  Set.iter
+                                      (fun mem ->
+                                          //Console.Error.WriteLine("mem: " + mem.ToString())
+                                          let result = analysisBExpr bol (Set.singleton mem)
+                                          if Set.contains true result then
+                                              finalResult <- Set.add mem finalResult
+                                      ) memSet
+                                  finalResult
     | CLabel cmd -> match cmd with
                              | Assign (s,a) -> // s[[𝑥 ∶= 𝑎]](𝑀) = {(̂ 𝜎1[𝑥 ↦ 𝑠], ̂𝜎2) ∣ (̂ 𝜎1, ̂𝜎2) ∈ 𝑀 ∧ 𝑠 ∈ ̂s[[𝑎]]( ̂ 𝜎1, ̂𝜎2)}
                                                                         updateVarSignInMem memSet s a
@@ -443,3 +424,6 @@ let analysis (src: string) (input: Input) : Output =
 // ./dev/win.exe --open
 // a:=2; if a<0 -> a:=2 [] a>0 -> a:=-1 fi
 // do (c != d) -> c := d od
+// b := ((57 / (-9 * (b / b))))
+// b := (d / 2) ; d := b
+// d := (32 / d) ; a:=b; do ((a <= b)) -> b := c od
