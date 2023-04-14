@@ -73,9 +73,7 @@ let abstractTimes (set1:Set<Sign>) (set2:Set<Sign>) : Set<Sign> =
                         | Negative, Negative -> Set.add Positive set
                         | Negative, Zero -> Set.add Zero set
                         | Negative, Positive -> Set.add Negative set
-                        | Zero, Negative -> Set.add Zero set
-                        | Zero, Zero -> Set.add Zero set
-                        | Zero, Positive -> Set.add Zero set
+                        | Zero, _ -> Set.add Zero set
                         | Positive, Negative -> Set.add Negative set
                         | Positive, Zero -> Set.add Zero set
                         | Positive, Positive -> Set.add Positive set
@@ -86,12 +84,12 @@ let abstractDiv (set1:Set<Sign>) (set2:Set<Sign>) : Set<Sign> =
             Set.fold (fun set el1 -> 
             Set.fold (fun set el2 -> 
                       match el1, el2 with
-                        | Negative, Negative -> Set.add Positive set
-                        | Negative, Positive -> Set.add Negative set
+                        | Negative, Negative -> (Set.add Positive set).Add(Zero)
+                        | Negative, Positive -> (Set.add Negative set).Add(Zero)
                         | Zero, Negative -> Set.add Zero set
                         | Zero, Positive -> Set.add Zero set
-                        | Positive, Negative -> Set.add Positive set
-                        | Positive, Positive -> Set.add Positive set
+                        | Positive, Negative -> (Set.add Negative set).Add(Zero)
+                        | Positive, Positive -> (Set.add Positive set).Add(Zero)
                         | _, Zero -> Set.empty // division by zero
                         ) set set2
                      ) Set.empty set1
@@ -118,7 +116,9 @@ let abstractPow (set1:Set<Sign>) (set2:Set<Sign>) : Set<Sign> =
                       match el1, el2 with
                         | Positive, _ -> Set.add Positive set
                         | Zero, _ -> Set.add Zero set
-                        | Negative, _ -> (Set.add Negative set).Add(Positive)
+                        | Negative, Positive -> (Set.add Negative set).Add(Positive)
+                        | Negative, Zero -> Set.add Positive set
+                        | Negative, Negative -> Set.empty // negative to negative power
                         ) set set2
                      ) Set.empty set1 
 
@@ -132,12 +132,123 @@ let abstractAnd (set1:Set<bool>) (set2:Set<bool>) : Set<bool> =
                         ) set set2
                      ) Set.empty set1
 
+let abstractOr (set1:Set<bool>) (set2:Set<bool>) : Set<bool> =
+            Set.fold (fun set el1 -> 
+            Set.fold (fun set el2 -> 
+                      match el1, el2 with
+                        | true, _ -> Set.add true set
+                        | false, true -> Set.add true set
+                        | false, false -> Set.add false set
+                        ) set set2
+                     ) Set.empty set1
+
+let abstractAndAnd (set1:Set<bool>) (set2:Set<bool>) : Set<bool> =
+            Set.union(Set.intersect set1 (Set.add false Set.empty)) (abstractAnd set1 set2)
+
+let abstractOrOr (set1:Set<bool>) (set2:Set<bool>) : Set<bool> =
+            Set.union(Set.intersect set1 (Set.add true Set.empty)) (abstractOr set1 set2)
+
+let abstractNot (set:Set<bool>) : Set<bool> =
+            Set.fold (fun set el -> 
+                      match el with
+                        | true -> Set.add false set
+                        | false -> Set.add true set
+                        ) Set.empty set
+
+let abstractEq (set1:Set<Sign>) (set2:Set<Sign>) : Set<bool> =
+            Set.fold (fun set el1 -> 
+            Set.fold (fun set el2 -> 
+                      match el1, el2 with
+                        | Negative, Negative -> (Set.add true set).Add(false)
+                        | Negative, _ -> Set.add false set
+                        | Zero, Zero -> Set.add true set
+                        | Zero, _ -> Set.add false set
+                        | Positive, Positive -> (Set.add true set).Add(false)
+                        | Positive, _ -> Set.add false set
+                        ) set set2
+                     ) Set.empty set1
+
+let abstractNeq (set1:Set<Sign>) (set2:Set<Sign>) : Set<bool> =
+            Set.fold (fun set el1 -> 
+            Set.fold (fun set el2 -> 
+                      match el1, el2 with
+                        | Negative, Negative -> (Set.add true set).Add(false)
+                        | Negative, _ -> Set.add true set
+                        | Zero, Zero -> Set.add false set
+                        | Zero, _ -> Set.add true set
+                        | Positive, Positive -> (Set.add true set).Add(false)
+                        | Positive, _ -> Set.add true set
+                        ) set set2
+                     ) Set.empty set1
+
+let abstractGt (set1:Set<Sign>) (set2:Set<Sign>) : Set<bool> =
+            Set.fold (fun set el1 -> 
+            Set.fold (fun set el2 -> 
+                      match el1, el2 with
+                        | Negative, Negative -> (Set.add true set).Add(false)
+                        | Negative, _ -> Set.add false set
+                        | Zero, Positive -> Set.add false set
+                        | Zero, Zero -> Set.add false set
+                        | Zero, Negative -> Set.add true set
+                        | Positive, Positive -> (Set.add true set).Add(false)
+                        | Positive, _ -> Set.add true set
+                        ) set set2
+                     ) Set.empty set1
+
+let abstractGte (set1:Set<Sign>) (set2:Set<Sign>) : Set<bool> =
+            Set.fold (fun set el1 -> 
+            Set.fold (fun set el2 -> 
+                      match el1, el2 with
+                        | Negative, Negative -> (Set.add true set).Add(false)
+                        | Negative, _ -> Set.add false set
+                        | Zero, Positive -> Set.add false set
+                        | Zero, _ -> Set.add true set
+                        | Positive, Positive -> (Set.add true set).Add(false)
+                        | Positive, _ -> Set.add true set
+                        ) set set2
+                     ) Set.empty set1
+
+let abstractLt (set1:Set<Sign>) (set2:Set<Sign>) : Set<bool> =
+            Set.fold (fun set el1 -> 
+            Set.fold (fun set el2 -> 
+                      match el1, el2 with
+                        | Negative, Negative -> (Set.add true set).Add(false)
+                        | Negative, _ -> Set.add true set
+                        | Zero, Positive -> Set.add true set
+                        | Zero, Zero -> Set.add false set
+                        | Zero, Negative -> Set.add false set
+                        | Positive, Positive -> (Set.add true set).Add(false)
+                        | Positive, _ -> Set.add false set
+                        ) set set2
+                     ) Set.empty set1
+
+let abstractLte (set1:Set<Sign>) (set2:Set<Sign>) : Set<bool> =
+            Set.fold (fun set el1 -> 
+            Set.fold (fun set el2 -> 
+                      match el1, el2 with
+                        | Negative, Negative -> (Set.add true set).Add(false)
+                        | Negative, _ -> Set.add true set
+                        | Zero, Positive -> Set.add true set
+                        | Zero, _ -> Set.add false set
+                        | Positive, Positive -> (Set.add true set).Add(false)
+                        | Positive, _ -> Set.add false set
+                        ) set set2
+                     ) Set.empty set1
+
 let rec analysisAExpr (a:arithmeticExpr) (mem:Set<SignAssignment>) : Set<Sign> = 
     match a with
     | Num n -> Set.singleton (if n < 0 then Negative else if n = 0 then Zero else Positive)
     | Str s -> 
                         let mapV = Set.fold (fun map mem -> mem.variables) Map.empty mem
                         Set.add (Map.find s mapV) Set.empty
+                        // // find all s in mem variables
+                        // let setS = Set.fold (fun set mem -> 
+                        //                      if mem.variables.ContainsKey(s) 
+                        //                      then Set.add mem.variables.[s] set
+                        //                      else set
+                        //                      ) Set.empty mem
+                        // //Console.Error.WriteLine ("setS: "+ s  + (Set.toList setS).ToString())
+                        // setS
     | ArrAccess (s, a) -> 
                                                   let mapA = Set.fold (fun map mem -> mem.arrays) Map.empty mem
                                                   if not (Set.isEmpty(Set.intersect (analysisAExpr a mem) (Set.empty.Add(Zero).Add(Positive))))
@@ -150,9 +261,7 @@ let rec analysisAExpr (a:arithmeticExpr) (mem:Set<SignAssignment>) : Set<Sign> =
     | UPlusExpr a -> abstractUPlus (analysisAExpr a mem)
     | UMinusExpr a -> abstractUMinus (analysisAExpr a mem)
     | PowExpr (a1, a2) -> abstractPow (analysisAExpr a1 mem) (analysisAExpr a2 mem)
-    | _ -> Set.empty
-
-
+    | ParenAExpr a -> analysisAExpr a mem
 
 let updateVarSignInMem (mem:Set<SignAssignment>) (s:string) (a:arithmeticExpr) : Set<SignAssignment> = 
     let newVarSigns = analysisAExpr a mem
@@ -167,7 +276,7 @@ let updateVarSignInMem (mem:Set<SignAssignment>) (s:string) (a:arithmeticExpr) :
                                        { sa with variables = Map.add s x sa.variables }
                                        )
                     Set.union(newMem xs updatedMem s) updatedMem
-    newMem (Set.toList newVarSigns) mem s
+    if Set.isEmpty newVarSigns then Set.empty else newMem (Set.toList newVarSigns) mem s
 
 // To be implemented
 let updateArrSignInMem (mem: Set<SignAssignment>) (s: string) (a1: arithmeticExpr) (a2: arithmeticExpr) : Set<SignAssignment> = 
@@ -202,36 +311,59 @@ let updateArrSignInMem (mem: Set<SignAssignment>) (s: string) (a1: arithmeticExp
     
     // Not working for now (To-do: fix this)
     Set.union newMem (Set.map (fun sa -> { sa with arrays = Map.add s newArrSigns sa.arrays }) newMem)    
-                            
-
+                          
 let rec analysisBExpr (b:booleanExpr) (mem:Set<SignAssignment>): Set<bool> = 
     match b with
     | True -> Set.singleton true
     | False -> Set.singleton false
     | AndExpr (b1,b2) -> abstractAnd (analysisBExpr b1 mem) (analysisBExpr b2 mem)
-    // | OrExpr (b1,b2) -> abstractOr (analysisBExpr b1 mem) (analysisBExpr b2 mem)
-    // | AndAndExpr (b1,b2) -> abstractAndAnd (analysisBExpr b1 mem) (analysisBExpr b2 mem)
-    // | OrOrExpr (b1,b2) -> abstractOrOr (analysisBExpr b1 mem) (analysisBExpr b2 mem)
-    // | NotExpr b -> abstractNot (analysisBExpr b mem)
-    // | EqExpr (a1,a2) -> abstractEq (analysisAExpr a1 mem) (analysisAExpr a2 mem)
-    // | NeqExpr (a1,a2) -> abstractNeq (analysisAExpr a1 mem) (analysisAExpr a2 mem)
-    // | GtExpr (a1,a2) -> abstractGt (analysisAExpr a1 mem) (analysisAExpr a2 mem)
-    // | GteExpr (a1,a2) -> abstractGte (analysisAExpr a1 mem) (analysisAExpr a2 mem)
-    // | LtExpr (a1,a2) -> abstractLt (analysisAExpr a1 mem) (analysisAExpr a2 mem)
-    // | LteExpr (a1,a2) -> abstractLte (analysisAExpr a1 mem) (analysisAExpr a2 mem)
-    // | _ -> Set.empty
+    | OrExpr (b1,b2) -> abstractOr (analysisBExpr b1 mem) (analysisBExpr b2 mem)
+    | AndAndExpr (b1,b2) -> abstractAndAnd (analysisBExpr b1 mem) (analysisBExpr b2 mem)
+    | OrOrExpr (b1,b2) -> abstractOrOr (analysisBExpr b1 mem) (analysisBExpr b2 mem)
+    | NotExpr b -> abstractNot (analysisBExpr b mem)
+    | EqExpr (a1,a2) -> abstractEq (analysisAExpr a1 mem) (analysisAExpr a2 mem)
+    | NeqExpr (a1,a2) -> 
+                                                          // let set1 = analysisAExpr a1 mem
+                                                          // let set2 = analysisAExpr a2 mem
+                                                          // Console.Error.WriteLine("set1: " + (Set.toList set1).ToString())
+                                                          // Console.Error.WriteLine("set2: " + (Set.toList set2).ToString())
+                                                          // Console.Error.WriteLine("checkMem" + (Set.toList mem).ToString())
+      
+                                                          abstractNeq (analysisAExpr a1 mem) (analysisAExpr a2 mem)
+    | GtExpr (a1,a2) -> abstractGt (analysisAExpr a1 mem) (analysisAExpr a2 mem)
+    | GteExpr (a1,a2) -> abstractGte (analysisAExpr a1 mem) (analysisAExpr a2 mem)
+    | LtExpr (a1,a2) -> abstractLt (analysisAExpr a1 mem) (analysisAExpr a2 mem)
+    | LteExpr (a1,a2) -> abstractLte (analysisAExpr a1 mem) (analysisAExpr a2 mem)
+    | ParenBExpr b -> analysisBExpr b mem
 
+let removeLastElement (set: Set<'a>) : Set<'a> =
+    match Set.toList set |> List.rev with
+    | [] -> set
+    | hd :: tl -> Set.ofList (List.rev tl)
 
 
 let analysisFunctionS (action:Label) (memSet:Set<SignAssignment>): Set<SignAssignment> = 
     match action with
     | BLabel bol -> //S[[𝑏]](𝑀) = {(̂𝜎1,𝜎2) ∣ (̂𝜎1,𝜎2) ∈ 𝑀 ∧ 𝗍𝗍 ∈B[[𝑏]](𝜎1,𝜎2)}
-                                  Set.fold (
-                                      fun set memory ->
-                                          if Set.contains true (analysisBExpr bol memory) 
-                                              then Set.union memory set
-                                              else set
-                                  ) Set.empty (Set.map Set.singleton memSet)
+                                  //Console.Error.WriteLine("memSet: " + (Set.toList memSet).ToString())
+                                  let result =
+                                    Set.fold (
+                                        fun set memory ->
+                                            Console.Error.WriteLine("set: " + (Set.toList set).ToString())
+                                            Console.Error.WriteLine("memory: " + (Set.toList memory).ToString())
+                                            //Console.Error.WriteLine("bol: " + bol.ToString())
+                                            //Console.Error.WriteLine("analysisBExpr bol memory: " + (Set.toList (analysisBExpr bol memory)).ToString())
+                                            if Set.contains true (analysisBExpr bol memory) 
+                                            then 
+                                                 Console.Error.WriteLine "true"
+                                                 Set.union memory set
+                                            else 
+                                                 Console.Error.WriteLine "false"
+                                                 Console.Error.WriteLine(removeLastElement(memory))                                               
+                                                 removeLastElement(memory)  //Check HER!
+                                    ) Set.empty (Set.singleton memSet)
+                                  //Console.Error.WriteLine("result: " + (Set.toList result).ToString())
+                                  result
     | CLabel cmd -> match cmd with
                              | Assign (s,a) -> // s[[𝑥 ∶= 𝑎]](𝑀) = {(̂ 𝜎1[𝑥 ↦ 𝑠], ̂𝜎2) ∣ (̂ 𝜎1, ̂𝜎2) ∈ 𝑀 ∧ 𝑠 ∈ ̂s[[𝑎]]( ̂ 𝜎1, ̂𝜎2)}
                                                                         updateVarSignInMem memSet s a
@@ -265,20 +397,25 @@ let startAnalysis (pg:List<Edge>) (abstractMem:SignAssignment) : Map<string, Set
                         | [] -> []
                         | e::es -> if e.source = n then e::(findAllEdgesInE n es) else findAllEdgesInE n es
                    let edges = findAllEdgesInE n E
+                   // Console.Error.WriteLine ("edges" + (edges).ToString())
                    let mutable nodesToBeAdded:List<Node> = []
                    // do if ̂S[[𝛼]](A(𝑞_source)) ⊈ A(q_target) then A(q_target) := A(q_target) ∪ ̂S[[𝛼]](A(𝑞_source)); W := W∪ {q_target};
                    let rec loop edges =
                         match edges with
-                        | [] -> Ares<-Ares
-                        | e::es -> if 
-                                     not(Set.isSubset
-                                     (analysisFunctionS e.label (Ares |> Map.find(e.source))) 
-                                     (Ares |> Map.find(e.target)))
+                        | [] -> ()
+                        | e::es -> 
+                                   let setFromS = (analysisFunctionS e.label (Ares |> Map.find(e.source)))
+                                   let setATarget = (Ares |> Map.find(e.target))
+                                  //  Console.Error.WriteLine ("setFromS" + (setFromS).ToString())
+                                  //  Console.Error.WriteLine ("setATarget" + (setATarget).ToString())
+                                   if 
+                                      not(Set.isSubset setFromS setATarget)
                                    then 
-                                        //Console.Error.WriteLine "If"
-                                        Ares <- Map.add e.target (Set.union (Ares|> Map.find(e.target)) (analysisFunctionS e.label (Ares|> Map.find(e.source)))) Ares
-                                        //Console.Error.WriteLine Ares
-                                        nodesToBeAdded <- nodesToBeAdded@[e.target]                               
+                                      //Console.Error.WriteLine "If"
+                                      Ares <- Map.add e.target (Set.union setATarget setFromS) Ares              
+                                      nodesToBeAdded <- nodesToBeAdded@[e.target]
+                                      Console.Error.WriteLine ("nodesToBeAdded" + (nodesToBeAdded).ToString())
+                                      loop es                               
                                    else
                                       //Console.Error.WriteLine "Else" 
                                       loop es
@@ -304,4 +441,5 @@ let analysis (src: string) (input: Input) : Output =
 
 // Run script
 // ./dev/win.exe --open
-// a:=1;
+// a:=2; if a<0 -> a:=2 [] a>0 -> a:=-1 fi
+// do (c != d) -> c := d od
