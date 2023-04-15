@@ -208,6 +208,7 @@ let updateArrSignInMem (mem: Set<SignAssignment>) (s: string) (a1: arithmeticExp
     let updatedMem = (Set.map (fun sa -> { sa with arrays = Map.add s newArrSigns sa.arrays }) newMem) 
     
     Set.union newMem updatedMem
+    
 
 
 
