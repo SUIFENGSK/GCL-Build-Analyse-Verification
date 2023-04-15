@@ -169,12 +169,9 @@ let updateVarSignInMem (mem:Set<SignAssignment>) (s:string) (a:arithmeticExpr) :
                     Set.union(newMem xs updatedMem s) updatedMem
     newMem (Set.toList newVarSigns) mem s
 
-// To be implemented
 let updateArrSignInMem (mem: Set<SignAssignment>) (s: string) (a1: arithmeticExpr) (a2: arithmeticExpr) : Set<SignAssignment> = 
     let resInd = analysisAExpr a1 mem
     let newArrSigns = analysisAExpr a2 mem
-    //let originalArrsigns = Set.fold (fun set mem -> Set.union set (Map.tryFind s mem.arrays |> Option.defaultValue Set.empty)) Set.empty mem
-    //Console.Error.WriteLine("originalArrsigns: " + (Set.toList originalArrsigns).ToString())
     Console.Error.WriteLine("newArrSigns: " + (Set.toList newArrSigns).ToString())
     let rec newMem newArrSigns mem s : Set<SignAssignment> =
         match newArrSigns with
@@ -184,25 +181,35 @@ let updateArrSignInMem (mem: Set<SignAssignment>) (s: string) (a1: arithmeticExp
             if Set.intersect resInd (Set.empty.Add(Zero).Add(Positive)) = Set.empty then
                 mem
             else
+                let mutable extraSetAssignment1: Set<SignAssignment> = Set.empty
+                let mutable extraSetAssignment2: Set<SignAssignment> = Set.empty
                 let updatedMem = 
                     mem
                     |> Set.map (fun sa ->
-                        let arraySigns = Map.tryFind s sa.arrays |> Option.defaultValue Set.empty
+                        let arraySigns = Map.tryFind s sa.arrays |> Option.defaultValue Set.empty                                   
+                        
+                        if not(Set.contains x arraySigns) && Set.count arraySigns > 1 then
+                                    let firstElement = Set.empty.Add(arraySigns |> Set.toList |> List.head).Add(x)
+                                    let secondElement = Set.empty.Add(arraySigns |> Set.toList |> List.tail |> List.head).Add(x)
+                                    extraSetAssignment1 <- extraSetAssignment1.Add({ sa with arrays = Map.add s firstElement sa.arrays })
+                                    extraSetAssignment2 <- extraSetAssignment2.Add({ sa with arrays = Map.add s secondElement sa.arrays })                        
+
                         let newArraySigns = 
                             if Set.contains x arraySigns then
                                 arraySigns
                             else
-                                Set.add x arraySigns
+                                Set.add x arraySigns                       
+                        
                         { sa with arrays = Map.add s newArraySigns sa.arrays }
                     )
-                Set.union updatedMem (newMem xs updatedMem s)
-    let newMem = newMem (Set.toList newArrSigns) mem s
-    // Add newArrSigns to newMem
-    Console.Error.WriteLine("newMem: " + (Set.toList newMem).ToString())
+                let extraUnion = Set.union updatedMem (Set.union extraSetAssignment1 extraSetAssignment2)
+                Set.union extraUnion (newMem xs updatedMem s)
+    let newMem = newMem (Set.toList newArrSigns) mem s 
+    let updatedMem = (Set.map (fun sa -> { sa with arrays = Map.add s newArrSigns sa.arrays }) newMem) 
     
-    // Not working for now (To-do: fix this)
-    Set.union newMem (Set.map (fun sa -> { sa with arrays = Map.add s newArrSigns sa.arrays }) newMem)    
-                            
+    Set.union newMem updatedMem
+
+
 
 let rec analysisBExpr (b:booleanExpr) (mem:Set<SignAssignment>): Set<bool> = 
     match b with
