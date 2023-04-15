@@ -351,14 +351,20 @@ let analysisFunctionS (action:Label) (memSet:Set<SignAssignment>): Set<SignAssig
 
 let startAnalysis (pg:List<Edge>) (abstractMem:SignAssignment) : Map<string, Set<SignAssignment>> =
     // forall 𝑞 ∈ Q ⧵ {𝑞⊳} do A(𝑞) := { } ;
-    let Q = ((List.map (fun x -> x.source) pg)@(List.map (fun x -> x.target) pg))|> List.distinct
+    // let Q = ((List.map (fun x -> x.source) pg)@(List.map (fun x -> x.target) pg))|> List.distinct
+    let Q = pg
+            |> List.collect (fun x -> [x.source; x.target])
+            |> Set.ofList
+            |> Set.toList
     let E = pg
-    let QwithoutStartNode = List.filter (fun x -> x <> "q0") Q
-    let rec initAres (q:List<string>) (ares:Map<string, Set<SignAssignment>>) : Map<string, Set<SignAssignment>> =
-        match q with
-        | [] -> ares
-        | x::xs -> initAres xs (Map.add x Set.empty ares)
-    let mutable Ares:Map<string, Set<SignAssignment>> = initAres QwithoutStartNode Map.empty
+    // let QwithoutStartNode = List.filter (fun x -> x <> "q0") Q
+    let QwithoutStartNode = List.tail Q
+    // let rec initAres (q:List<string>) (ares:Map<string, Set<SignAssignment>>) : Map<string, Set<SignAssignment>> =
+    //     match q with
+    //     | [] -> ares
+    //     | x::xs -> initAres xs (Map.add x Set.empty ares)
+    // let mutable Ares:Map<string, Set<SignAssignment>> = initAres QwithoutStartNode Map.empty
+    let mutable Ares:Map<string, Set<SignAssignment>> = QwithoutStartNode|> List.fold (fun acc x -> Map.add x Set.empty acc) Map.empty
     // A(𝑞⊳) :=̂Mem⊳;
     Ares <- Map.add "q0" (Set.singleton abstractMem) Ares
     // W := {𝑞⊳};
