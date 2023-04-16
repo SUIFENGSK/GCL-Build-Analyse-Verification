@@ -275,7 +275,7 @@ let updateArrSignInMem (mem: Set<SignAssignment>) (s: string) (a1: arithmeticExp
     let resInd = analysisAExpr a1 mem
     let newArrSigns = analysisAExpr a2 mem
     if Set.intersect resInd (Set.empty.Add(Zero).Add(Positive)) = Set.empty then
-        mem
+        Set.empty
     else
         let mutable spiltNewArrSigns = Set.empty
         Set.iter (fun x -> 
