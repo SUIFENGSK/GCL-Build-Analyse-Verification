@@ -274,7 +274,6 @@ let updateVarSignInMem (mem:Set<SignAssignment>) (s:string) (a:arithmeticExpr) :
 let updateArrSignInMem (mem: Set<SignAssignment>) (s: string) (a1: arithmeticExpr) (a2: arithmeticExpr) : Set<SignAssignment> = 
     let resInd = analysisAExpr a1 mem
     let newArrSigns = analysisAExpr a2 mem
-    Console.Error.WriteLine("newArrSigns " + newArrSigns.ToString())
     if Set.intersect resInd (Set.empty.Add(Zero).Add(Positive)) = Set.empty then
         mem
     else
@@ -287,13 +286,11 @@ let updateArrSignInMem (mem: Set<SignAssignment>) (s: string) (a1: arithmeticExp
                   else
                       spiltNewArrSigns <- Set.add (Set.empty.Add(Positive)) spiltNewArrSigns
                   ) newArrSigns
-        Console.Error.WriteLine("spiltNewArrSigns " + spiltNewArrSigns.ToString())
         // combine all possible signs between mem and newArrSigns
         let mutable combineArrSigns= Set.empty
         Set.iter (fun sa -> 
                   Set.iter (fun newArrSign -> 
                             let mutable findset = Map.find s sa.arrays
-                            Console.Error.WriteLine("findset " + findset.ToString())
                             if findset.Count>1 then
                                // Add first total
                                combineArrSigns <- Set.add { sa with arrays = Map.add s (Set.union (Map.find s sa.arrays) newArrSign) sa.arrays } combineArrSigns
@@ -314,8 +311,6 @@ let updateArrSignInMem (mem: Set<SignAssignment>) (s: string) (a1: arithmeticExp
                             finalResult <- Set.add { sa with arrays = Map.add s newArrSigns sa.arrays } finalResult
                             ) spiltNewArrSigns
                   ) mem
-        //Console.Error.WriteLine("combineArrSigns " + combineArrSigns.ToString())
-        //Console.Error.WriteLine("finalResult " + finalResult.ToString())
         finalResult
 
                           
