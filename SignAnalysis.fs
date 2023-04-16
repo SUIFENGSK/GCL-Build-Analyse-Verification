@@ -274,41 +274,49 @@ let updateVarSignInMem (mem:Set<SignAssignment>) (s:string) (a:arithmeticExpr) :
 let updateArrSignInMem (mem: Set<SignAssignment>) (s: string) (a1: arithmeticExpr) (a2: arithmeticExpr) : Set<SignAssignment> = 
     let resInd = analysisAExpr a1 mem
     let newArrSigns = analysisAExpr a2 mem
-    let rec newMem newArrSigns mem s : Set<SignAssignment> =
-        match newArrSigns with
-        | [] -> mem 
-               
-        | x::xs -> 
-            if Set.intersect resInd (Set.empty.Add(Zero).Add(Positive)) = Set.empty then
-                mem
-            else
-                let mutable extraSetAssignment1: Set<SignAssignment> = Set.empty
-                let mutable extraSetAssignment2: Set<SignAssignment> = Set.empty
-                let updatedMem = 
-                    mem
-                    |> Set.map (fun sa ->
-                        let arraySigns = Map.tryFind s sa.arrays |> Option.defaultValue Set.empty                                   
-                        
-                        if not(Set.contains x arraySigns) && Set.count arraySigns > 1 then
-                                    let firstElement = Set.empty.Add(arraySigns |> Set.toList |> List.head).Add(x)
-                                    let secondElement = Set.empty.Add(arraySigns |> Set.toList |> List.tail |> List.head).Add(x)
-                                    extraSetAssignment1 <- extraSetAssignment1.Add({ sa with arrays = Map.add s firstElement sa.arrays })
-                                    extraSetAssignment2 <- extraSetAssignment2.Add({ sa with arrays = Map.add s secondElement sa.arrays })                        
-
-                        let newArraySigns = 
-                            if Set.contains x arraySigns then
-                                arraySigns
+    Console.Error.WriteLine("newArrSigns " + newArrSigns.ToString())
+    if Set.intersect resInd (Set.empty.Add(Zero).Add(Positive)) = Set.empty then
+        mem
+    else
+        let mutable spiltNewArrSigns = Set.empty
+        Set.iter (fun x -> 
+                  if x = Negative then
+                      spiltNewArrSigns <- Set.add (Set.empty.Add(Negative)) spiltNewArrSigns
+                  else if x = Zero then
+                      spiltNewArrSigns <- Set.add (Set.empty.Add(Zero)) spiltNewArrSigns
+                  else
+                      spiltNewArrSigns <- Set.add (Set.empty.Add(Positive)) spiltNewArrSigns
+                  ) newArrSigns
+        Console.Error.WriteLine("spiltNewArrSigns " + spiltNewArrSigns.ToString())
+        // combine all possible signs between mem and newArrSigns
+        let mutable combineArrSigns= Set.empty
+        Set.iter (fun sa -> 
+                  Set.iter (fun newArrSign -> 
+                            let mutable findset = Map.find s sa.arrays
+                            Console.Error.WriteLine("findset " + findset.ToString())
+                            if findset.Count>1 then
+                               // Add first total
+                               combineArrSigns <- Set.add { sa with arrays = Map.add s (Set.union (Map.find s sa.arrays) newArrSign) sa.arrays } combineArrSigns
+                               // Then split and add every element in findset
+                               Set.iter
+                                (fun x -> 
+                                  combineArrSigns <- Set.add { sa with arrays = Map.add s (Set.union (Set.singleton x) newArrSign) sa.arrays } combineArrSigns
+                                ) findset                                
                             else
-                                Set.add x arraySigns                       
-                        
-                        { sa with arrays = Map.add s newArraySigns sa.arrays }
-                    )
-                let extraUnion = Set.union updatedMem (Set.union extraSetAssignment1 extraSetAssignment2)
-                Set.union extraUnion (newMem xs updatedMem s)
-    let newMem = newMem (Set.toList newArrSigns) mem s 
-    let updatedMem = (Set.map (fun sa -> { sa with arrays = Map.add s newArrSigns sa.arrays }) newMem) 
-    
-    Set.union newMem updatedMem
+                               combineArrSigns <- Set.add { sa with arrays = Map.add s (Set.union (Map.find s sa.arrays) newArrSign) sa.arrays } combineArrSigns
+                            ) spiltNewArrSigns
+                  ) mem
+        let mutable finalResult: Set<SignAssignment> = Set.empty
+        // add spiltNewArrSigns and combineArrSigns to finalResult
+        finalResult <- combineArrSigns
+        Set.iter (fun sa -> 
+                  Set.iter (fun newArrSigns -> 
+                            finalResult <- Set.add { sa with arrays = Map.add s newArrSigns sa.arrays } finalResult
+                            ) spiltNewArrSigns
+                  ) mem
+        //Console.Error.WriteLine("combineArrSigns " + combineArrSigns.ToString())
+        //Console.Error.WriteLine("finalResult " + finalResult.ToString())
+        finalResult
 
                           
 let rec analysisBExpr (b:booleanExpr) (mem:Set<SignAssignment>): Set<bool> = 
