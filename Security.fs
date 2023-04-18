@@ -28,18 +28,17 @@ type Output =
       allowed: Flow list
       violations: Flow list }
 
-// Need to consider different types of variables.
 let rec assignAll (acc: List<string>) (s: string) : List<Flow> =
     match acc with
-    | [] -> []@[(flow s s)]
-    | x::xs -> (flow x x)::(flow s x)::(assignAll xs s)
+    | [] -> []
+    | x::xs -> (flow x s)::(assignAll xs s)
 
 let rec fv (ast:AST) =
     match ast with
     | A aExpr -> match aExpr with
                               | Num n -> []
                               | Str s-> [s]
-                              | ArrAccess (s, a) -> [s]
+                              | ArrAccess (s, a) -> [s] @ (fv (A a))
                               | PlusExpr (a1, a2) -> (fv (A a1)) @ (fv (A a2))
                               | MinusExpr (a1, a2) -> (fv (A a1)) @ (fv (A a2))
                               | TimesExpr (a1, a2) -> (fv (A a1)) @ (fv (A a2))
@@ -70,40 +69,25 @@ let rec fv (ast:AST) =
 let rec findActualFlows ast acc=
     match ast with
     | Skip -> []
-    | Seq (c1, c2) -> (findActualFlows c1 acc @ findActualFlows c2 acc) |> List.distinct
+    | Seq (c1, c2) -> findActualFlows c1 acc @ findActualFlows c2 acc
     | If gc -> findActualFlowsGuard gc acc
     | Do gc -> findActualFlowsGuard gc acc
-    | Assign (s, a) -> assignAll ((acc @ fv(A a))|> List.distinct) s
-    | ArrAssign (s, a1, a2) -> assignAll ((acc @ fv(A a1)@fv(A a2))|> List.distinct) s
+    | Assign (s, a) -> assignAll (acc @ fv(A a)) s
+    | ArrAssign (s, a1, a2) -> assignAll (acc @ fv(A a1)@fv(A a2)) s
 and findActualFlowsGuard gc acc=
     match gc with
-    | Condition (b, c) -> findActualFlows c ((acc @ fv(B b))|> List.distinct)
-    | Choice (gc1, gc2) -> (findActualFlowsGuard gc1 acc @ findActualFlowsGuard gc2 (acc@implicitDeps(gc1)))|> List.distinct
+    | Condition (b, c) -> findActualFlows c (acc @ fv(B b))
+    | Choice (gc1, gc2) -> findActualFlowsGuard gc1 acc @ findActualFlowsGuard gc2 (acc@implicitDeps(gc1))
 and implicitDeps gc=
     match gc with
     | Condition (b, c) -> fv(B b)
-    | Choice (gc1, gc2) -> (implicitDeps gc1 @ implicitDeps gc2) |> List.distinct
-
-
-
-
-let startAnalysis ast input =
-    let mutable actual: List<Flow> = []
-    let mutable allowed: List<Flow> = []
-    let mutable violations: List<Flow> = []
-    let lattice = input.lattice
-    let classification = input.classification
-    actual <- findActualFlows ast []
-    { actual = actual
-      allowed = allowed
-      violations = violations}
+    | Choice (gc1, gc2) -> implicitDeps gc1 @ implicitDeps gc2
 
 
 let analysis (src: string) (input: Input) : Output =
     match parse Parser.startCommand (src) with
-                        | Ok ast -> 
-                                    let result = startAnalysis ast input
-                                    { actual = result.actual
-                                      allowed = result.allowed
-                                      violations = result.violations }
+                        | Ok ast ->                                     
+                                    { actual = (findActualFlows ast []) |> List.distinct |> List.sort
+                                      allowed = []
+                                      violations = [] }
                         | Error e -> failwith "Error in parsing"
