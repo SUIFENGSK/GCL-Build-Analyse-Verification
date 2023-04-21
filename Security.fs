@@ -28,15 +28,20 @@ type Output =
       allowed: Flow list
       violations: Flow list }
     
-let rec assignAll (acc: List<string>) (s: string) : List<Flow> =
+let rec assignAllManyToOne (acc: List<string>) (s: string) : List<Flow> =
     match acc with
     | [] -> []
-    | x::xs -> (flow x s)::(assignAll xs s)
+    | x::xs -> (flow x s)::(assignAllManyToOne xs s)
 
-let rec assignAllAllowed (acc: Flow list) (input: List<string*List<string>>)  =
+let rec assignAllOneToMany (acc: List<string>) (s: string) : List<Flow> =
+    match acc with
+    | [] -> []
+    | x::xs -> (flow s x)::(assignAllOneToMany xs s)
+
+let rec assignAllAllowedFlow (acc: Flow list) (input: List<string*List<string>>)  =
     match input with
     | [] -> []
-    | (x,y)::xs -> acc @ (assignAll y x) @ (assignAllAllowed acc xs)
+    | (x,y)::xs -> acc @ (assignAllOneToMany y x) @ (assignAllAllowedFlow acc xs)
 
 let rec fv (ast:AST) =
     match ast with
@@ -77,8 +82,8 @@ let rec findActualFlows ast acc=
     | Seq (c1, c2) -> findActualFlows c1 acc @ findActualFlows c2 acc
     | If gc -> findActualFlowsGuard gc acc
     | Do gc -> findActualFlowsGuard gc acc
-    | Assign (s, a) -> assignAll (acc @ fv(A a)) s
-    | ArrAssign (s, a1, a2) -> assignAll (acc @ fv(A a1)@fv(A a2)) s
+    | Assign (s, a) -> assignAllManyToOne (acc @ fv(A a)) s
+    | ArrAssign (s, a1, a2) -> assignAllManyToOne (acc @ fv(A a1)@fv(A a2)) s
 and findActualFlowsGuard gc acc=
     match gc with
     | Condition (b, c) -> findActualFlows c (acc @ fv(B b))
@@ -93,40 +98,49 @@ let rec findNextLevel (currentLevel: string) (lattice: Flow list) : string =
     | [] -> ""
     | x::xs -> if x.from = currentLevel then x.into else findNextLevel currentLevel xs
 
+let rec findSameLevel (v:Map<string,string>) (level:string) = 
+    let mutable result : List<string> = []
+    Map.iter (fun x y -> if y = level then result <- x::result) v
+    result
+
+let rec findHigherLevel (v:Map<string,string>) (currentLevel: string) (lattice: Flow List) =
+    let mutable result : List<string> = []
+    let mutable currentLevel = currentLevel
+    while currentLevel <> "" do
+        let nextLevel = findNextLevel currentLevel lattice
+        currentLevel <- nextLevel
+        result <- result @ findSameLevel v nextLevel
+    result
 
 let findAllowedFlows lattice classification =
     let variables = classification.variables
     let arrays = classification.arrays
-    let constructEachVarResult (s: string) (sLevel: string): string*List<string> = 
+
+    let constructEachResult (s: string) (sLevel: string) (ref: Map<string,string>): string*List<string> = 
             let mutable acc : List<string> = []
-            let rec findSameLevelVar (v:Map<string,string>) (level:string) = 
-                let mutable findSameLevelVarResult : List<string> = []
-                Map.iter (fun x y -> if y = level then findSameLevelVarResult <- x::findSameLevelVarResult) v
-                findSameLevelVarResult
-            acc <- findSameLevelVar variables sLevel
-            let rec findHigherLevelVal (v:Map<string,string>) (currentLevel: string) =
-                let mutable findHigherLevelValResult : List<string> = []
-                Map.iter (fun x y -> if y = currentLevel then findHigherLevelValResult <- findHigherLevelValResult @ x::(findHigherLevelVal variables (findNextLevel currentLevel lattice))) v
-                findHigherLevelValResult
-            acc <- acc @ findHigherLevelVal variables sLevel
+            acc <- acc @ findSameLevel ref sLevel
+            acc <- acc @ findHigherLevel ref sLevel lattice
             (s, acc)
-    let rec constructAllVarResult (v:Map<string,string>) : List<string*List<string>> =
-        let mutable constructAllVarResultResult : List<string*List<string>> = []
-        Map.iter (fun x y -> constructAllVarResultResult <- constructAllVarResultResult @ [constructEachVarResult x y]) v
-        constructAllVarResultResult
+    let rec constructAllResult (ref:Map<string,string>) : List<string*List<string>> =
+        let mutable result : List<string*List<string>> = []
+        Map.iter (fun x y -> result <- result @ [constructEachResult x y ref]) ref
+        result  
 
-    assignAllAllowed List.empty (constructAllVarResult variables) |> List.distinct |> List.sort
-
-    
-                                                                 
-                     
-        
-    
+    let finalResultList = (constructAllResult variables) @ (constructAllResult arrays) |> List.distinct |> List.sort
+    assignAllAllowedFlow List.empty finalResultList
+   
+let rec findViolations actual allowed =
+    match actual with
+    | [] -> []
+    | x::xs -> if List.contains x allowed then findViolations xs allowed else x::findViolations xs allowed
 
 let analysis (src: string) (input: Input) : Output =
     match parse Parser.startCommand (src) with
-                        | Ok ast ->                                     
-                                    { actual = (findActualFlows ast []) |> List.distinct |> List.sort
-                                      allowed = findAllowedFlows input.lattice input.classification
-                                      violations = [] }
+                        | Ok ast ->
+                                    let actual = (findActualFlows ast []) |> List.distinct |> List.sort
+                                    let allowed = (findAllowedFlows input.lattice input.classification) |> List.distinct |> List.sort
+                                    let violations = findViolations actual allowed                                     
+                                    { actual = actual
+                                      allowed = allowed
+                                      violations = violations}
                         | Error e -> failwith "Error in parsing"
