@@ -82,6 +82,5 @@ let rec prettyPrint (ast:AST) =
 let analysis (src: string) : string =
     match parse Parser.startCommand (src) with
                         | Ok ast ->
-                            Console.Error.WriteLine("> {0}", ast)
                             prettyPrint (C ast)   
                         | Error e -> "Parse error: {0}" + e.Message

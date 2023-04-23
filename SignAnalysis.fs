@@ -34,6 +34,7 @@ type Output =
       
 // abstract Operations
 
+let mutable error = false // true if division by zero or negative to negative power
 let abstractPlus (set1:Set<Sign>) (set2:Set<Sign>) : Set<Sign> =
             Set.fold (fun set el1 -> 
             Set.fold (fun set el2 -> 
@@ -90,9 +91,12 @@ let abstractDiv (set1:Set<Sign>) (set2:Set<Sign>) : Set<Sign> =
                         | Zero, Positive -> Set.add Zero set
                         | Positive, Negative -> (Set.add Negative set).Add(Zero)
                         | Positive, Positive -> (Set.add Positive set).Add(Zero)
-                        | _, Zero -> set // division by zero
+                        | _, Zero ->  if set2.Count=1 then
+                                         error <- true;
+                                      set // division by zero
                         ) set set2
                      ) Set.empty set1
+            
 
 let abstractUPlus (set:Set<Sign>) : Set<Sign> =
             Set.fold (fun set el -> 
@@ -114,7 +118,9 @@ let abstractPow (set1:Set<Sign>) (set2:Set<Sign>) : Set<Sign> =
             Set.fold (fun set el1 -> 
             Set.fold (fun set el2 -> 
                       match el1, el2 with
-                        | _, Negative -> set // negative to negative power
+                        | _, Negative -> if set2.Count=1 then
+                                            error <- true;
+                                         set // negative to negative power
                         | Positive, Positive -> Set.add Positive set
                         | Positive, Zero -> Set.add Positive set
                         | Zero, Positive -> Set.add Zero set
@@ -339,7 +345,7 @@ let analysisFunctionS (action:Label) (memSet:Set<SignAssignment>): Set<SignAssig
                                   Set.iter
                                       (fun mem ->
                                           let result = analysisBExpr bol (Set.singleton mem)
-                                          if Set.contains true result then
+                                          if Set.contains true result && (not error || result.Count>1) then
                                               finalResult <- Set.add mem finalResult
                                       ) memSet
                                   finalResult
@@ -354,19 +360,12 @@ let analysisFunctionS (action:Label) (memSet:Set<SignAssignment>): Set<SignAssig
 
 let startAnalysis (pg:List<Edge>) (abstractMem:SignAssignment) : Map<string, Set<SignAssignment>> =
     // forall 𝑞 ∈ Q ⧵ {𝑞⊳} do A(𝑞) := { } ;
-    // let Q = ((List.map (fun x -> x.source) pg)@(List.map (fun x -> x.target) pg))|> List.distinct
     let Q = pg
             |> List.collect (fun x -> [x.source; x.target])
             |> Set.ofList
             |> Set.toList
     let E = pg
-    // let QwithoutStartNode = List.filter (fun x -> x <> "q0") Q
     let QwithoutStartNode = List.tail Q
-    // let rec initAres (q:List<string>) (ares:Map<string, Set<SignAssignment>>) : Map<string, Set<SignAssignment>> =
-    //     match q with
-    //     | [] -> ares
-    //     | x::xs -> initAres xs (Map.add x Set.empty ares)
-    // let mutable Ares:Map<string, Set<SignAssignment>> = initAres QwithoutStartNode Map.empty
     let mutable Ares:Map<string, Set<SignAssignment>> = QwithoutStartNode|> List.fold (fun acc x -> Map.add x Set.empty acc) Map.empty
     // A(𝑞⊳) :=̂Mem⊳;
     Ares <- Map.add "q0" (Set.singleton abstractMem) Ares
@@ -388,6 +387,7 @@ let startAnalysis (pg:List<Edge>) (abstractMem:SignAssignment) : Map<string, Set
                         match edges with
                         | [] -> ()
                         | e::es -> 
+                                   error <- false // reset error
                                    let setFromS = (analysisFunctionS e.label (Ares |> Map.find(e.source)))
                                    let setATarget = (Ares |> Map.find(e.target))
                                    if 
@@ -417,3 +417,4 @@ let analysis (src: string) (input: Input) : Output =
 
 // Run script
 // ./dev/win.exe --open
+// do (((48 <= c) && (23 > (-100 / a)))) -> c := 41 od

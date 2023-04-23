@@ -159,8 +159,7 @@ let analysis (src: string) (input: Input) : Output =
 
     match parse Parser.startCommand (src) with
           | Ok ast ->
-                               let programGraph = astToProgramGraph (C ast) input.determinism
-                               //Console.Error.WriteLine(programGraph)                            
+                               let programGraph = astToProgramGraph (C ast) input.determinism                         
                                let (trace, final) = executionSequence (programGraph, "q0", input.assignment, input.trace_length)                         
                                { execution_sequence = List.map prepareConfiguration trace
                                  final = final

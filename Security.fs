@@ -121,12 +121,12 @@ let findAllowedFlows lattice classification =
             acc <- acc @ findSameLevel ref sLevel
             acc <- acc @ findHigherLevel ref sLevel lattice
             (s, acc)
-    let rec constructAllResult (ref:Map<string,string>) : List<string*List<string>> =
+    let rec constructAllResults (ref:Map<string,string>) : List<string*List<string>> =
         let mutable result : List<string*List<string>> = []
         Map.iter (fun x y -> result <- result @ [constructEachResult x y ref]) ref
         result  
 
-    let finalResultList = (constructAllResult variables) @ (constructAllResult arrays) |> List.distinct |> List.sort
+    let finalResultList = (constructAllResults variables) @ (constructAllResults arrays) |> List.distinct |> List.sort
     assignAllAllowedFlow List.empty finalResultList
    
 let rec findViolations actual allowed =
