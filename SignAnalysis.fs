@@ -33,8 +33,6 @@ type Output =
       nodes: Map<string, Set<SignAssignment>> }
       
 // abstract Operations
-
-let mutable error = false // true if division by zero or negative to negative power
 let abstractPlus (set1:Set<Sign>) (set2:Set<Sign>) : Set<Sign> =
             Set.fold (fun set el1 -> 
             Set.fold (fun set el2 -> 
@@ -91,9 +89,7 @@ let abstractDiv (set1:Set<Sign>) (set2:Set<Sign>) : Set<Sign> =
                         | Zero, Positive -> Set.add Zero set
                         | Positive, Negative -> (Set.add Negative set).Add(Zero)
                         | Positive, Positive -> (Set.add Positive set).Add(Zero)
-                        | _, Zero ->  if set2.Count=1 then
-                                         error <- true;
-                                      set // division by zero
+                        | _, Zero -> set // division by zero
                         ) set set2
                      ) Set.empty set1
             
@@ -118,9 +114,7 @@ let abstractPow (set1:Set<Sign>) (set2:Set<Sign>) : Set<Sign> =
             Set.fold (fun set el1 -> 
             Set.fold (fun set el2 -> 
                       match el1, el2 with
-                        | _, Negative -> if set2.Count=1 then
-                                            error <- true;
-                                         set // negative to negative power
+                        | _, Negative -> set // negative to negative power
                         | Positive, Positive -> Set.add Positive set
                         | Positive, Zero -> Set.add Positive set
                         | Zero, Positive -> Set.add Zero set
@@ -345,7 +339,7 @@ let analysisFunctionS (action:Label) (memSet:Set<SignAssignment>): Set<SignAssig
                                   Set.iter
                                       (fun mem ->
                                           let result = analysisBExpr bol (Set.singleton mem)
-                                          if Set.contains true result && (not error || result.Count>1) then
+                                          if Set.contains true result  then
                                               finalResult <- Set.add mem finalResult
                                       ) memSet
                                   finalResult
@@ -387,7 +381,6 @@ let startAnalysis (pg:List<Edge>) (abstractMem:SignAssignment) : Map<string, Set
                         match edges with
                         | [] -> ()
                         | e::es -> 
-                                   error <- false // reset error
                                    let setFromS = (analysisFunctionS e.label (Ares |> Map.find(e.source)))
                                    let setATarget = (Ares |> Map.find(e.target))
                                    if 
