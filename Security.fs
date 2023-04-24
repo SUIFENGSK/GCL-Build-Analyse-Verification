@@ -125,8 +125,12 @@ let findAllowedFlows lattice classification =
         let mutable result : List<string*List<string>> = []
         Map.iter (fun x y -> result <- result @ [constructEachResult x y ref]) ref
         result  
-
-    let finalResultList = (constructAllResults variables) @ (constructAllResults arrays) |> List.distinct |> List.sort
+    
+    // merge variables and arrays
+    let mutable varAndArr : Map<string,string> = Map.empty
+    Map.iter (fun x y -> varAndArr <- Map.add x y varAndArr) variables
+    Map.iter (fun x y -> varAndArr <- Map.add x y varAndArr) arrays
+    let finalResultList = (constructAllResults varAndArr) |> List.distinct |> List.sort
     assignAllAllowedFlow List.empty finalResultList
    
 let rec findViolations actual allowed =
