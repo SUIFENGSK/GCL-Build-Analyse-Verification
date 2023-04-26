@@ -22,22 +22,15 @@ open AST
 // We declare the initial non-terminal symbol
 %start start
 %start startCommand
-%start startBooleanExpr
-%start startGuardedCommand
 
 
 // We specify the return type of each of then non-terminal symbols
 %type <AST.arithmeticExpr> start
 %type <AST.arithmeticExpr> arithmeticExpr0
 
-%type <AST.booleanExpr> startBooleanExpr
-%type <AST.booleanExpr> booleanExpr0
-
 %type <AST.command> startCommand
 %type <AST.command> command
 
-%type <AST.guardedCommand> startGuardedCommand
-%type <AST.guardedCommand> guardedCommand
 
 // Grammar productions
 %%
@@ -85,13 +78,10 @@ command:
   | IFSTART guardedCommand IFEND { If($2) }
   | DOSTART guardedCommand DOEND { Do($2) }
 
-startGuardedCommand: guardedCommand EOF { $1 }
 // Level 2: Guarded commands
 guardedCommand:
   | booleanExpr0 CONDITION command { Condition($1, $3) }
   | guardedCommand BRACKETS guardedCommand { Choice($1, $3) }
-
-startBooleanExpr: booleanExpr0 EOF { $1 }
 
 // Boolean expressions
 booleanExpr0:
