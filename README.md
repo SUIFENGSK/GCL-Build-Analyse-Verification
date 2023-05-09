@@ -1,3 +1,8 @@
+# About the program
+A tool for running and analysing programs written in a variant of the Guarded Command Language (GCL); details of the language are described [here](gcl.md).
+The overall structure of the assignment is illustrated below, where green boxes are inputs and outputs of your tool; blue boxes represent components that you have to implement.
+![Structure of the Assignment](overview.png)
+
 # F# Starter
 
 This folder contains the skeleton of a parser along with the input and output types for each analysis given in the assignment. It also contains an example of a "calculator" program in F# that reads an arithmetic expression from the command line and print the result of evaluating such expression for initial testing.
