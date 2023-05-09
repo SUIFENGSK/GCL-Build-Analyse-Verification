@@ -1,6 +1,7 @@
 # About the program
 A tool for running and analysing programs written in a variant of the Guarded Command Language (GCL); details of the language are described [here](gcl.md).
 The overall structure of the assignment is illustrated below, where green boxes are inputs and outputs of your tool; blue boxes represent components that you have to implement.
+
 ![Structure of the Assignment](overview.png)
 
 # F# Starter
